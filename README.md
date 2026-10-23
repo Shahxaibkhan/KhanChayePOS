@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Khan Chaye POS
 
-## Getting Started
+Internal point-of-sale for Khan Chaye — daily order taking, expense logging, and
+item management. Not public-facing; built for staff and admin use only.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
+- Supabase (Postgres) for storage, accessed only from the server via the
+  service-role key — the database is never exposed to the browser
+- Cookie-based sessions (no third-party auth): a shared **staff PIN** unlocks
+  the order screen, a separate **admin password** unlocks item/expense
+  management and reports
+
+## One-time setup
+
+### 1. Create the Supabase project
+
+1. Go to [supabase.com](https://supabase.com) → New Project.
+2. Once it's up, open **SQL Editor** → New query, paste the contents of
+   [`sql/schema.sql`](sql/schema.sql), and run it. This creates the
+   `items`, `orders`, `order_items`, `expenses` tables (with a few starter
+   menu items you can edit/delete from Admin → Items).
+3. Go to **Project Settings → API** and copy:
+   - `Project URL` → `SUPABASE_URL`
+   - `service_role` secret key → `SUPABASE_SERVICE_ROLE_KEY` (⚠️ keep this
+     secret — it bypasses all database restrictions)
+
+### 2. Configure environment variables
+
+Copy `.env.local.example` to `.env.local` and fill in:
+
+```
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+STAFF_PIN=...          # shared PIN staff use to open the POS
+ADMIN_PASSWORD=...     # stronger password for Admin
+SESSION_SECRET=...     # long random string, e.g. `openssl rand -hex 32`
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Run locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Visit `http://localhost:3000` — it redirects to `/login` (staff PIN) or you
+can go straight to `/admin/login`.
 
-## Learn More
+## Deploying
 
-To learn more about Next.js, take a look at the following resources:
+Deploy this folder as its own Vercel project (separate from the marketing
+site in `../website`), then add the same environment variables in
+**Vercel → Project Settings → Environment Variables**. Point the subdomain
+`pos.khanchaye.com` at this project under **Settings → Domains**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How it's organized
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `/login`, `/admin/login` — PIN / password entry, sets a signed session cookie
+- `/pos` — order-taking screen (staff + admin)
+- `/pos/orders` — today's orders, read-only (staff + admin)
+- `/admin` — sales/expense dashboard (admin only)
+- `/admin/items` — add/edit/delete menu items (admin only)
+- `/admin/expenses` — log and manage expenses (admin only)
+- `/admin/orders` — full order history with date filtering + void (admin only)
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`middleware.ts` gates every `/pos/*` and `/admin/*` route based on the
+session cookie's role before any page code runs.

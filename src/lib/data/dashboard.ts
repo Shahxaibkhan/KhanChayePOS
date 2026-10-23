@@ -1,0 +1,60 @@
+import "server-only";
+import { supabase } from "@/lib/supabase";
+
+export type DashboardStats = {
+  salesTotal: number;
+  orderCount: number;
+  expenseTotal: number;
+  net: number;
+  topItems: { name: string; quantity: number; revenue: number }[];
+};
+
+export async function getDashboardStats(from: string, to: string): Promise<DashboardStats> {
+  const [{ data: orders, error: ordersError }, { data: expenses, error: expensesError }, { data: lines, error: linesError }] =
+    await Promise.all([
+      supabase
+        .from("orders")
+        .select("total")
+        .eq("status", "completed")
+        .gte("created_at", `${from}T00:00:00`)
+        .lte("created_at", `${to}T23:59:59.999`),
+      supabase
+        .from("expenses")
+        .select("amount")
+        .gte("expense_date", from)
+        .lte("expense_date", to),
+      supabase
+        .from("order_items")
+        .select("item_name, quantity, line_total, orders!inner(status, created_at)")
+        .eq("orders.status", "completed")
+        .gte("orders.created_at", `${from}T00:00:00`)
+        .lte("orders.created_at", `${to}T23:59:59.999`),
+    ]);
+
+  if (ordersError) throw new Error(`Failed to load sales: ${ordersError.message}`);
+  if (expensesError) throw new Error(`Failed to load expenses: ${expensesError.message}`);
+  if (linesError) throw new Error(`Failed to load top items: ${linesError.message}`);
+
+  const salesTotal = (orders ?? []).reduce((sum, o) => sum + Number(o.total), 0);
+  const expenseTotal = (expenses ?? []).reduce((sum, e) => sum + Number(e.amount), 0);
+
+  const byItem = new Map<string, { quantity: number; revenue: number }>();
+  for (const line of lines ?? []) {
+    const entry = byItem.get(line.item_name) ?? { quantity: 0, revenue: 0 };
+    entry.quantity += line.quantity;
+    entry.revenue += Number(line.line_total);
+    byItem.set(line.item_name, entry);
+  }
+  const topItems = [...byItem.entries()]
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 6);
+
+  return {
+    salesTotal,
+    orderCount: (orders ?? []).length,
+    expenseTotal,
+    net: salesTotal - expenseTotal,
+    topItems,
+  };
+}

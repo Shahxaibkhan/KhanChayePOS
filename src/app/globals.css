@@ -1,26 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --kc-black: #0a0908;
+  --kc-charcoal: #141210;
+  --kc-charcoal-2: #1c1916;
+  --kc-charcoal-3: #26221d;
+  --kc-orange: #e07b39;
+  --kc-orange-2: #c85f22;
+  --kc-gold: #d4af37;
+  --kc-gold-light: #f2d98a;
+  --kc-cream: #f4ecdd;
+  --kc-muted: #a89f92;
+  --kc-red: #e5484d;
+  --kc-green: #3fb27f;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-kc-black: var(--kc-black);
+  --color-kc-charcoal: var(--kc-charcoal);
+  --color-kc-charcoal-2: var(--kc-charcoal-2);
+  --color-kc-charcoal-3: var(--kc-charcoal-3);
+  --color-kc-orange: var(--kc-orange);
+  --color-kc-orange-2: var(--kc-orange-2);
+  --color-kc-gold: var(--kc-gold);
+  --color-kc-gold-light: var(--kc-gold-light);
+  --color-kc-cream: var(--kc-cream);
+  --color-kc-muted: var(--kc-muted);
+  --color-kc-red: var(--kc-red);
+  --color-kc-green: var(--kc-green);
+  --font-sans: var(--font-poppins);
+  --font-display: var(--font-anton);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--kc-black);
+  color: var(--kc-cream);
+}
+
+::selection {
+  background: var(--kc-orange);
+  color: var(--kc-black);
+}
+
+* {
+  scrollbar-color: var(--kc-charcoal-3) var(--kc-charcoal);
 }
