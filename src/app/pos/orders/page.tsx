@@ -26,7 +26,9 @@ export default async function TodaysOrdersPage() {
               className={`rounded-2xl border p-4 ${
                 order.status === "voided"
                   ? "border-kc-red/20 bg-kc-red/5 opacity-60"
-                  : "border-kc-gold/10 bg-kc-charcoal-2"
+                  : order.status === "returned"
+                    ? "border-kc-gold/30 bg-kc-gold/5 opacity-70"
+                    : "border-kc-gold/10 bg-kc-charcoal-2"
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -34,6 +36,9 @@ export default async function TodaysOrdersPage() {
                   Order #{order.order_number}
                   {order.status === "voided" && (
                     <span className="ml-2 text-xs text-kc-red uppercase">Voided</span>
+                  )}
+                  {order.status === "returned" && (
+                    <span className="ml-2 text-xs text-kc-gold-light uppercase">Returned</span>
                   )}
                 </div>
                 <div className="text-sm text-kc-gold-light font-semibold">{formatMoney(Number(order.total))}</div>

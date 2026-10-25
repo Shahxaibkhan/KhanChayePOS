@@ -12,7 +12,7 @@ export type Item = {
   updated_at: string;
 };
 
-export type OrderStatus = "completed" | "voided";
+export type OrderStatus = "completed" | "voided" | "returned";
 export type PaymentMethod = "cash" | "card" | "online";
 
 export type Order = {
@@ -54,4 +54,16 @@ export type CartLine = {
   name: string;
   unitPrice: number;
   quantity: number;
+};
+
+export type Wastage = {
+  id: string;
+  item_id: string | null;
+  description: string;
+  category: string;
+  quantity: number;
+  estimated_cost: number;
+  wastage_date: string;
+  created_by: string | null;
+  created_at: string;
 };

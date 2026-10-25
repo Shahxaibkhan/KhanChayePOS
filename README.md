@@ -17,10 +17,14 @@ item management. Not public-facing; built for staff and admin use only.
 ### 1. Create the Supabase project
 
 1. Go to [supabase.com](https://supabase.com) → New Project.
-2. Once it's up, open **SQL Editor** → New query, paste the contents of
-   [`sql/schema.sql`](sql/schema.sql), and run it. This creates the
-   `items`, `orders`, `order_items`, `expenses` tables (with a few starter
-   menu items you can edit/delete from Admin → Items).
+2. Once it's up, open **SQL Editor** → New query, and run the files in
+   `sql/` **in order** — each is a one-time migration, run once each:
+   - [`sql/schema.sql`](sql/schema.sql) — creates `items`, `orders`,
+     `order_items`, `expenses`, with a few starter menu items
+   - [`sql/002_wastage_and_returns.sql`](sql/002_wastage_and_returns.sql) —
+     adds the `returned` order status and a `wastage` table
+   - [`sql/003_real_menu.sql`](sql/003_real_menu.sql) — swaps the starter
+     items for the real printed Khan Chaye menu
 3. Go to **Project Settings → API** and copy:
    - `Project URL` → `SUPABASE_URL`
    - `service_role` secret key → `SUPABASE_SERVICE_ROLE_KEY` (⚠️ keep this
@@ -60,10 +64,21 @@ site in `../website`), then add the same environment variables in
 - `/login`, `/admin/login` — PIN / password entry, sets a signed session cookie
 - `/pos` — order-taking screen (staff + admin)
 - `/pos/orders` — today's orders, read-only (staff + admin)
-- `/admin` — sales/expense dashboard (admin only)
+- `/admin` — sales / expenses / wastage / net dashboard (admin only)
 - `/admin/items` — add/edit/delete menu items (admin only)
-- `/admin/expenses` — log and manage expenses (admin only)
-- `/admin/orders` — full order history with date filtering + void (admin only)
+- `/admin/expenses` — log and manage cash expenses, e.g. milk, tea leaves,
+  flour, gas, rent (admin only)
+- `/admin/wastage` — log spoiled/burnt/dropped stock, optionally linked to a
+  menu item, separate from cash expenses (admin only)
+- `/admin/orders` — full order history with date filtering, **void** (order
+  that should never have counted) and **mark returned** (order that was
+  served, then refunded/returned) (admin only)
 
-`middleware.ts` gates every `/pos/*` and `/admin/*` route based on the
-session cookie's role before any page code runs.
+An order's status is one of `completed`, `voided`, or `returned`. Only
+`completed` orders count toward sales — voided and returned are both
+excluded, but tracked separately so you can tell "we made a mistake" apart
+from "the customer wasn't happy."
+
+`src/proxy.ts` (Next's middleware convention, renamed) gates every `/pos/*`
+and `/admin/*` route based on the session cookie's role before any page code
+runs.

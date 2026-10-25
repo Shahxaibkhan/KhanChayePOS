@@ -48,15 +48,21 @@ export default async function AdminDashboard({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatCard label="Sales" value={formatMoney(stats.salesTotal)} accent="orange" />
         <StatCard label="Orders" value={String(stats.orderCount)} accent="gold" />
         <StatCard label="Expenses" value={formatMoney(stats.expenseTotal)} accent="red" />
+        <StatCard label="Wastage" value={formatMoney(stats.wastageTotal)} accent="red" />
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          label="Net"
+          label="Net (Sales − Expenses − Wastage)"
           value={formatMoney(stats.net)}
           accent={stats.net >= 0 ? "green" : "red"}
         />
+        <StatCard label="Voided Orders" value={String(stats.voidedCount)} accent="gold" />
+        <StatCard label="Returned Orders" value={String(stats.returnedCount)} accent="gold" />
       </div>
 
       <div className="rounded-2xl border border-kc-gold/10 bg-kc-charcoal-2 p-5">

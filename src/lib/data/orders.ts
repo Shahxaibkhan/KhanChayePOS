@@ -85,6 +85,13 @@ export async function voidOrder(id: string): Promise<void> {
   if (error) throw new Error(`Failed to void order: ${error.message}`);
 }
 
+/** Marks a completed order as returned (e.g. customer refund after serving) — distinct
+ * from voiding, which is for orders that should never have counted in the first place. */
+export async function returnOrder(id: string): Promise<void> {
+  const { error } = await supabase.from("orders").update({ status: "returned" }).eq("id", id);
+  if (error) throw new Error(`Failed to mark order as returned: ${error.message}`);
+}
+
 export async function listOrdersWithItems(opts: {
   from?: string;
   to?: string;
