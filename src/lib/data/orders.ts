@@ -1,6 +1,11 @@
 import "server-only";
 import { supabase } from "@/lib/supabase";
+import { PARCEL_FEE_PER_CUP } from "@/lib/constants";
 import type { CartLine, Order, OrderWithItems, PaymentMethod } from "@/lib/types";
+
+function lineTotal(line: CartLine): number {
+  return line.unitPrice * line.quantity + line.parcelQty * PARCEL_FEE_PER_CUP;
+}
 
 export type CreateOrderInput = {
   lines: CartLine[];
@@ -13,8 +18,13 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   if (input.lines.length === 0) {
     throw new Error("Cannot create an order with no items.");
   }
+  for (const line of input.lines) {
+    if (line.parcelQty < 0 || line.parcelQty > line.quantity) {
+      throw new Error(`Invalid parcel quantity for ${line.name}.`);
+    }
+  }
 
-  const subtotal = input.lines.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+  const subtotal = input.lines.reduce((sum, l) => sum + lineTotal(l), 0);
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -37,7 +47,9 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       item_name: l.name,
       unit_price: l.unitPrice,
       quantity: l.quantity,
-      line_total: l.unitPrice * l.quantity,
+      parcel_qty: l.parcelQty,
+      parcel_fee: l.parcelQty > 0 ? PARCEL_FEE_PER_CUP : 0,
+      line_total: lineTotal(l),
     }))
   );
 

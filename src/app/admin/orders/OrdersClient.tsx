@@ -57,6 +57,9 @@ export default function OrdersClient({ orders }: { orders: OrderWithItems[] }) {
                       <div key={li.id} className="flex justify-between">
                         <span>
                           {li.quantity} × {li.item_name}
+                          {li.parcel_qty > 0 && (
+                            <span className="text-kc-muted"> · 🥡 {li.parcel_qty} parcel</span>
+                          )}
                         </span>
                         <span>{formatMoney(Number(li.line_total))}</span>
                       </div>

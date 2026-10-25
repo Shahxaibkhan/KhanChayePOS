@@ -3,7 +3,12 @@
 import { useMemo, useState } from "react";
 import type { CartLine, Item, PaymentMethod } from "@/lib/types";
 import { formatMoney } from "@/lib/date";
+import { PARCEL_FEE_PER_CUP } from "@/lib/constants";
 import { submitOrderAction } from "./actions";
+
+function lineTotal(line: CartLine): number {
+  return line.unitPrice * line.quantity + line.parcelQty * PARCEL_FEE_PER_CUP;
+}
 
 export default function PosClient({ items }: { items: Item[] }) {
   const categories = useMemo(() => {
@@ -23,13 +28,24 @@ export default function PosClient({ items }: { items: Item[] }) {
   const visibleItems = activeCategory === "All" ? items : items.filter((i) => i.category === activeCategory);
   const lines = Object.values(cart);
   const totalQty = lines.reduce((s, l) => s + l.quantity, 0);
-  const total = lines.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
+  const parcelQtyTotal = lines.reduce((s, l) => s + l.parcelQty, 0);
+  const parcelCharge = parcelQtyTotal * PARCEL_FEE_PER_CUP;
+  const total = lines.reduce((s, l) => s + lineTotal(l), 0);
 
   function addItem(item: Item) {
     setCart((prev) => {
       const existing = prev[item.id];
       const quantity = (existing?.quantity ?? 0) + 1;
-      return { ...prev, [item.id]: { itemId: item.id, name: item.name, unitPrice: item.price, quantity } };
+      return {
+        ...prev,
+        [item.id]: {
+          itemId: item.id,
+          name: item.name,
+          unitPrice: item.price,
+          quantity,
+          parcelQty: existing?.parcelQty ?? 0,
+        },
+      };
     });
   }
 
@@ -40,7 +56,20 @@ export default function PosClient({ items }: { items: Item[] }) {
         delete next[itemId];
         return next;
       }
-      return { ...prev, [itemId]: { ...prev[itemId], quantity } };
+      const existing = prev[itemId];
+      return {
+        ...prev,
+        [itemId]: { ...existing, quantity, parcelQty: Math.min(existing.parcelQty, quantity) },
+      };
+    });
+  }
+
+  function setParcelQty(itemId: string, parcelQty: number) {
+    setCart((prev) => {
+      const existing = prev[itemId];
+      if (!existing) return prev;
+      const clamped = Math.max(0, Math.min(parcelQty, existing.quantity));
+      return { ...prev, [itemId]: { ...existing, parcelQty: clamped } };
     });
   }
 
@@ -163,32 +192,57 @@ export default function PosClient({ items }: { items: Item[] }) {
               <p className="text-kc-muted text-sm text-center mt-10">Tap items to add them to the order.</p>
             ) : (
               lines.map((line) => (
-                <div key={line.itemId} className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm text-kc-cream truncate">{line.name}</div>
-                    <div className="text-xs text-kc-muted">{formatMoney(line.unitPrice)} each</div>
+                <div key={line.itemId} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm text-kc-cream truncate">{line.name}</div>
+                      <div className="text-xs text-kc-muted">{formatMoney(line.unitPrice)} each</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => setQty(line.itemId, line.quantity - 1)}
+                        className="h-7 w-7 rounded-full border border-kc-gold/20 text-kc-cream hover:border-kc-orange/60"
+                      >
+                        −
+                      </button>
+                      <span className="w-5 text-center text-sm">{line.quantity}</span>
+                      <button
+                        onClick={() => setQty(line.itemId, line.quantity + 1)}
+                        className="h-7 w-7 rounded-full border border-kc-gold/20 text-kc-cream hover:border-kc-orange/60"
+                      >
+                        +
+                      </button>
+                      <button
+                        onClick={() => removeItem(line.itemId)}
+                        className="text-kc-muted hover:text-kc-red text-xs ml-1"
+                        title="Remove"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => setQty(line.itemId, line.quantity - 1)}
-                      className="h-7 w-7 rounded-full border border-kc-gold/20 text-kc-cream hover:border-kc-orange/60"
-                    >
-                      −
-                    </button>
-                    <span className="w-5 text-center text-sm">{line.quantity}</span>
-                    <button
-                      onClick={() => setQty(line.itemId, line.quantity + 1)}
-                      className="h-7 w-7 rounded-full border border-kc-gold/20 text-kc-cream hover:border-kc-orange/60"
-                    >
-                      +
-                    </button>
-                    <button
-                      onClick={() => removeItem(line.itemId)}
-                      className="text-kc-muted hover:text-kc-red text-xs ml-1"
-                      title="Remove"
-                    >
-                      ✕
-                    </button>
+
+                  <div className="flex items-center justify-between pl-0.5">
+                    <span className="text-[11px] text-kc-muted">
+                      🥡 Parcel <span className="opacity-70">(+{formatMoney(PARCEL_FEE_PER_CUP)}/cup)</span>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setParcelQty(line.itemId, line.parcelQty - 1)}
+                        disabled={line.parcelQty <= 0}
+                        className="h-5 w-5 rounded-full border border-kc-gold/15 text-kc-muted text-xs disabled:opacity-30 hover:border-kc-gold/50"
+                      >
+                        −
+                      </button>
+                      <span className="w-4 text-center text-[11px] text-kc-gold-light">{line.parcelQty}</span>
+                      <button
+                        onClick={() => setParcelQty(line.itemId, line.parcelQty + 1)}
+                        disabled={line.parcelQty >= line.quantity}
+                        className="h-5 w-5 rounded-full border border-kc-gold/15 text-kc-muted text-xs disabled:opacity-30 hover:border-kc-gold/50"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -220,6 +274,13 @@ export default function PosClient({ items }: { items: Item[] }) {
             />
 
             {error && <p className="text-xs text-kc-red">{error}</p>}
+
+            {parcelQtyTotal > 0 && (
+              <div className="flex items-center justify-between text-xs text-kc-muted">
+                <span>Parcel charge ({parcelQtyTotal} cup{parcelQtyTotal > 1 ? "s" : ""})</span>
+                <span>{formatMoney(parcelCharge)}</span>
+              </div>
+            )}
 
             <div className="flex items-center justify-between text-lg font-semibold pt-1">
               <span className="text-kc-muted text-sm">Total</span>

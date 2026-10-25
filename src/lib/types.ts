@@ -34,6 +34,8 @@ export type OrderItem = {
   item_name: string;
   unit_price: number;
   quantity: number;
+  parcel_qty: number;
+  parcel_fee: number;
   line_total: number;
 };
 
@@ -54,6 +56,7 @@ export type CartLine = {
   name: string;
   unitPrice: number;
   quantity: number;
+  parcelQty: number; // how many of `quantity` are packed as parcel (0..quantity)
 };
 
 export type Wastage = {
