@@ -104,6 +104,48 @@ export async function returnOrder(id: string): Promise<void> {
   if (error) throw new Error(`Failed to mark order as returned: ${error.message}`);
 }
 
+export type EditOrderInput = {
+  orderId: string;
+  lines: CartLine[];
+  paymentMethod: PaymentMethod;
+  note: string;
+  editedBy: string;
+};
+
+/** Replaces an order's line items and recalculates its total in one DB
+ * transaction (see edit_order() in sql/005_order_editing.sql) — never leaves
+ * an order with its old items deleted but new ones missing. */
+export async function editOrder(input: EditOrderInput): Promise<void> {
+  if (input.lines.length === 0) {
+    throw new Error("Cannot save an order with no items — cancel it instead.");
+  }
+  for (const line of input.lines) {
+    if (line.parcelQty < 0 || line.parcelQty > line.quantity) {
+      throw new Error(`Invalid parcel quantity for ${line.name}.`);
+    }
+  }
+
+  const items = input.lines.map((l) => ({
+    item_id: l.itemId,
+    item_name: l.name,
+    unit_price: l.unitPrice,
+    quantity: l.quantity,
+    parcel_qty: l.parcelQty,
+    parcel_fee: l.parcelQty > 0 ? PARCEL_FEE_PER_CUP : 0,
+    line_total: lineTotal(l),
+  }));
+
+  const { error } = await supabase.rpc("edit_order", {
+    p_order_id: input.orderId,
+    p_items: items,
+    p_payment_method: input.paymentMethod,
+    p_note: input.note,
+    p_editor: input.editedBy,
+  });
+
+  if (error) throw new Error(`Failed to save order changes: ${error.message}`);
+}
+
 export async function listOrdersWithItems(opts: {
   from?: string;
   to?: string;

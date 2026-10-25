@@ -25,6 +25,8 @@ export type Order = {
   note: string | null;
   created_by: string | null;
   status: OrderStatus;
+  edited_at: string | null;
+  edited_by: string | null;
 };
 
 export type OrderItem = {

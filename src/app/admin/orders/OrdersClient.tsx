@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import type { OrderWithItems } from "@/lib/types";
+import type { Item, OrderWithItems } from "@/lib/types";
 import { formatDateTime, formatMoney } from "@/lib/date";
-import { returnOrderAction, voidOrderAction } from "./actions";
+import OrderEditor from "@/components/OrderEditor";
+import { editOrderAction, returnOrderAction, voidOrderAction } from "./actions";
 
-export default function OrdersClient({ orders }: { orders: OrderWithItems[] }) {
+export default function OrdersClient({ orders, items }: { orders: OrderWithItems[]; items: Item[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [returningId, setReturningId] = useState<string | null>(null);
+  const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
 
   return (
     <div className="space-y-3">
@@ -42,6 +44,7 @@ export default function OrdersClient({ orders }: { orders: OrderWithItems[] }) {
                   </div>
                   <div className="text-xs text-kc-muted">
                     {formatDateTime(order.created_at)} · {order.payment_method} · {order.created_by ?? "—"}
+                    {order.edited_at && <> · edited by {order.edited_by}</>}
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
@@ -68,6 +71,12 @@ export default function OrdersClient({ orders }: { orders: OrderWithItems[] }) {
                   {order.note && <div className="text-xs text-kc-muted italic mb-3">“{order.note}”</div>}
                   {order.status === "completed" && (
                     <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => setEditingOrder(order)}
+                        className="text-xs text-kc-gold-light hover:underline"
+                      >
+                        Edit
+                      </button>
                       <button
                         disabled={voidingId === order.id}
                         onClick={async () => {
@@ -107,6 +116,15 @@ export default function OrdersClient({ orders }: { orders: OrderWithItems[] }) {
             </div>
           );
         })
+      )}
+
+      {editingOrder && (
+        <OrderEditor
+          order={editingOrder}
+          items={items}
+          onClose={() => setEditingOrder(null)}
+          onSave={editOrderAction}
+        />
       )}
     </div>
   );

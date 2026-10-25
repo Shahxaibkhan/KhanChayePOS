@@ -1,4 +1,5 @@
 import { listOrdersWithItems } from "@/lib/data/orders";
+import { listItems } from "@/lib/data/items";
 import { daysAgoISO, formatMoney, todayISO } from "@/lib/date";
 import OrdersClient from "./OrdersClient";
 
@@ -11,7 +12,7 @@ export default async function AdminOrdersPage({
   const to = sp.to || todayISO();
   const from = sp.from || daysAgoISO(6);
 
-  const orders = await listOrdersWithItems({ from, to });
+  const [orders, items] = await Promise.all([listOrdersWithItems({ from, to }), listItems()]);
   const total = orders.filter((o) => o.status === "completed").reduce((s, o) => s + Number(o.total), 0);
 
   return (
@@ -51,7 +52,7 @@ export default async function AdminOrdersPage({
         </button>
       </form>
 
-      <OrdersClient orders={orders} />
+      <OrdersClient orders={orders} items={items} />
     </div>
   );
 }
