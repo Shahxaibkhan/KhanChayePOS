@@ -25,47 +25,47 @@ export default function ExpensesClient({ expenses }: { expenses: Expense[] }) {
   const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
 
   return (
-    <div className="px-4 sm:px-6 py-6 max-w-4xl mx-auto">
+    <div className="px-5 sm:px-8 py-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-2">
         <h1 className="font-display text-xl tracking-wide">Expenses</h1>
         <button
           onClick={() => setCreating(true)}
-          className="px-4 py-2 rounded-xl bg-gradient-to-br from-kc-orange to-kc-orange-2 text-white text-sm font-semibold"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-br from-kc-orange to-kc-orange-2 text-white text-sm font-semibold"
         >
           + Add Expense
         </button>
       </div>
-      <p className="text-kc-muted text-sm mb-6">
+      <p className="text-kc-muted text-sm mb-7">
         Last 90 days · Total {formatMoney(total)}
       </p>
 
-      <div className="rounded-2xl border border-kc-gold/10 overflow-hidden">
+      <div className="rounded-2xl bg-kc-charcoal-2 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-kc-charcoal-2 text-kc-muted text-xs uppercase tracking-wide">
+          <thead className="text-kc-muted text-xs uppercase tracking-wide">
             <tr>
-              <th className="text-left px-4 py-3">Date</th>
-              <th className="text-left px-4 py-3">Description</th>
-              <th className="text-left px-4 py-3">Category</th>
-              <th className="text-right px-4 py-3">Amount</th>
-              <th className="px-4 py-3" />
+              <th className="text-left px-5 py-4">Date</th>
+              <th className="text-left px-5 py-4">Description</th>
+              <th className="text-left px-5 py-4">Category</th>
+              <th className="text-right px-5 py-4">Amount</th>
+              <th className="px-5 py-4" />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-kc-charcoal-3">
             {expenses.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center text-kc-muted py-10">
+                <td colSpan={5} className="text-center text-kc-muted py-12">
                   No expenses logged yet.
                 </td>
               </tr>
             ) : (
               expenses.map((exp) => (
-                <tr key={exp.id} className="border-t border-kc-gold/5 hover:bg-kc-charcoal-2/60">
-                  <td className="px-4 py-3 text-kc-muted whitespace-nowrap">{formatDate(exp.expense_date)}</td>
-                  <td className="px-4 py-3 text-kc-cream">{exp.description}</td>
-                  <td className="px-4 py-3 text-kc-muted">{exp.category}</td>
-                  <td className="px-4 py-3 text-right text-kc-gold-light">{formatMoney(Number(exp.amount))}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-3">
+                <tr key={exp.id} className="hover:bg-kc-charcoal-3/50 transition">
+                  <td className="px-5 py-4 text-kc-muted whitespace-nowrap">{formatDate(exp.expense_date)}</td>
+                  <td className="px-5 py-4 text-kc-cream">{exp.description}</td>
+                  <td className="px-5 py-4 text-kc-muted">{exp.category}</td>
+                  <td className="px-5 py-4 text-right text-kc-gold-light">{formatMoney(Number(exp.amount))}</td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-4">
                       <button onClick={() => setEditing(exp)} className="text-xs text-kc-gold-light hover:underline">
                         Edit
                       </button>
@@ -146,10 +146,10 @@ function ExpenseModal({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-4">
-      <div className="bg-kc-charcoal border border-kc-gold/20 rounded-3xl p-6 w-full max-w-sm">
-        <h3 className="font-display text-lg mb-4">{initial ? "Edit Expense" : "Add Expense"}</h3>
+      <div className="bg-kc-charcoal rounded-3xl p-7 w-full max-w-sm shadow-2xl">
+        <h3 className="font-display text-lg mb-5">{initial ? "Edit Expense" : "Add Expense"}</h3>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Field label="Description">
             <input
               value={form.description}
@@ -175,7 +175,7 @@ function ExpenseModal({
             </datalist>
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <Field label="Amount (Rs)">
               <input
                 type="number"
@@ -196,12 +196,12 @@ function ExpenseModal({
           </div>
         </div>
 
-        {error && <p className="text-xs text-kc-red mt-3">{error}</p>}
+        {error && <p className="text-xs text-kc-red mt-4">{error}</p>}
 
-        <div className="flex gap-2 mt-6">
+        <div className="flex gap-3 mt-7">
           <button
             onClick={onClose}
-            className="flex-1 h-11 rounded-xl border border-kc-gold/15 text-kc-muted hover:text-kc-cream text-sm"
+            className="flex-1 h-11 rounded-xl bg-kc-charcoal-2 text-kc-muted hover:text-kc-cream text-sm"
           >
             Cancel
           </button>
@@ -222,13 +222,13 @@ function ConfirmDeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onC
   const [busy, setBusy] = useState(false);
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-4">
-      <div className="bg-kc-charcoal border border-kc-gold/20 rounded-3xl p-6 w-full max-w-sm text-center">
+      <div className="bg-kc-charcoal rounded-3xl p-7 w-full max-w-sm text-center shadow-2xl">
         <h3 className="font-display text-lg mb-2">Delete this expense?</h3>
-        <p className="text-kc-muted text-sm mb-6">This can&apos;t be undone.</p>
-        <div className="flex gap-2">
+        <p className="text-kc-muted text-sm mb-7">This can&apos;t be undone.</p>
+        <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 h-11 rounded-xl border border-kc-gold/15 text-kc-muted hover:text-kc-cream text-sm"
+            className="flex-1 h-11 rounded-xl bg-kc-charcoal-2 text-kc-muted hover:text-kc-cream text-sm"
           >
             Cancel
           </button>
@@ -249,12 +249,12 @@ function ConfirmDeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onC
 }
 
 const inputClass =
-  "w-full h-10 rounded-xl bg-kc-charcoal-2 border border-kc-gold/15 px-3 text-sm text-kc-cream placeholder:text-kc-muted focus:outline-none focus:border-kc-orange/50";
+  "w-full h-11 rounded-xl bg-kc-charcoal-2 px-3.5 text-sm text-kc-cream placeholder:text-kc-muted focus:outline-none focus:ring-2 focus:ring-kc-orange/50";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs text-kc-muted mb-1">{label}</span>
+      <span className="block text-xs text-kc-muted mb-1.5">{label}</span>
       {children}
     </label>
   );

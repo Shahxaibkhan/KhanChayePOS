@@ -35,54 +35,54 @@ export default function WastageClient({ wastage, items }: { wastage: Wastage[]; 
   const total = wastage.reduce((s, w) => s + Number(w.estimated_cost), 0);
 
   return (
-    <div className="px-4 sm:px-6 py-6 max-w-4xl mx-auto">
+    <div className="px-5 sm:px-8 py-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-2">
         <h1 className="font-display text-xl tracking-wide">Wastage</h1>
         <button
           onClick={() => setCreating(true)}
-          className="px-4 py-2 rounded-xl bg-gradient-to-br from-kc-orange to-kc-orange-2 text-white text-sm font-semibold"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-br from-kc-orange to-kc-orange-2 text-white text-sm font-semibold"
         >
           + Log Wastage
         </button>
       </div>
-      <p className="text-kc-muted text-sm mb-6">
+      <p className="text-kc-muted text-sm mb-7">
         Last 90 days · Total {formatMoney(total)} · spoiled, burnt, or dropped stock — separate from cash expenses
       </p>
 
-      <div className="rounded-2xl border border-kc-gold/10 overflow-hidden">
+      <div className="rounded-2xl bg-kc-charcoal-2 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-kc-charcoal-2 text-kc-muted text-xs uppercase tracking-wide">
+          <thead className="text-kc-muted text-xs uppercase tracking-wide">
             <tr>
-              <th className="text-left px-4 py-3">Date</th>
-              <th className="text-left px-4 py-3">Description</th>
-              <th className="text-left px-4 py-3">Category</th>
-              <th className="text-right px-4 py-3">Qty</th>
-              <th className="text-right px-4 py-3">Cost</th>
-              <th className="px-4 py-3" />
+              <th className="text-left px-5 py-4">Date</th>
+              <th className="text-left px-5 py-4">Description</th>
+              <th className="text-left px-5 py-4">Category</th>
+              <th className="text-right px-5 py-4">Qty</th>
+              <th className="text-right px-5 py-4">Cost</th>
+              <th className="px-5 py-4" />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-kc-charcoal-3">
             {wastage.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center text-kc-muted py-10">
+                <td colSpan={6} className="text-center text-kc-muted py-12">
                   Nothing logged yet.
                 </td>
               </tr>
             ) : (
               wastage.map((w) => (
-                <tr key={w.id} className="border-t border-kc-gold/5 hover:bg-kc-charcoal-2/60">
-                  <td className="px-4 py-3 text-kc-muted whitespace-nowrap">{formatDate(w.wastage_date)}</td>
-                  <td className="px-4 py-3 text-kc-cream">
+                <tr key={w.id} className="hover:bg-kc-charcoal-3/50 transition">
+                  <td className="px-5 py-4 text-kc-muted whitespace-nowrap">{formatDate(w.wastage_date)}</td>
+                  <td className="px-5 py-4 text-kc-cream">
                     {w.description}
                     {w.item_id && itemsById.get(w.item_id) && (
                       <span className="text-kc-muted"> · {itemsById.get(w.item_id)}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-kc-muted">{w.category}</td>
-                  <td className="px-4 py-3 text-right text-kc-cream">{w.quantity}</td>
-                  <td className="px-4 py-3 text-right text-kc-gold-light">{formatMoney(Number(w.estimated_cost))}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-3">
+                  <td className="px-5 py-4 text-kc-muted">{w.category}</td>
+                  <td className="px-5 py-4 text-right text-kc-cream">{w.quantity}</td>
+                  <td className="px-5 py-4 text-right text-kc-gold-light">{formatMoney(Number(w.estimated_cost))}</td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-4">
                       <button onClick={() => setEditing(w)} className="text-xs text-kc-gold-light hover:underline">
                         Edit
                       </button>
@@ -168,10 +168,10 @@ function WastageModal({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-4">
-      <div className="bg-kc-charcoal border border-kc-gold/20 rounded-3xl p-6 w-full max-w-sm">
-        <h3 className="font-display text-lg mb-4">{initial ? "Edit Wastage" : "Log Wastage"}</h3>
+      <div className="bg-kc-charcoal rounded-3xl p-7 w-full max-w-sm shadow-2xl">
+        <h3 className="font-display text-lg mb-5">{initial ? "Edit Wastage" : "Log Wastage"}</h3>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Field label="Description">
             <input
               value={form.description}
@@ -211,7 +211,7 @@ function WastageModal({
             </datalist>
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <Field label="Quantity">
               <input
                 type="number"
@@ -242,12 +242,12 @@ function WastageModal({
           </Field>
         </div>
 
-        {error && <p className="text-xs text-kc-red mt-3">{error}</p>}
+        {error && <p className="text-xs text-kc-red mt-4">{error}</p>}
 
-        <div className="flex gap-2 mt-6">
+        <div className="flex gap-3 mt-7">
           <button
             onClick={onClose}
-            className="flex-1 h-11 rounded-xl border border-kc-gold/15 text-kc-muted hover:text-kc-cream text-sm"
+            className="flex-1 h-11 rounded-xl bg-kc-charcoal-2 text-kc-muted hover:text-kc-cream text-sm"
           >
             Cancel
           </button>
@@ -268,13 +268,13 @@ function ConfirmDeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onC
   const [busy, setBusy] = useState(false);
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-4">
-      <div className="bg-kc-charcoal border border-kc-gold/20 rounded-3xl p-6 w-full max-w-sm text-center">
+      <div className="bg-kc-charcoal rounded-3xl p-7 w-full max-w-sm text-center shadow-2xl">
         <h3 className="font-display text-lg mb-2">Delete this entry?</h3>
-        <p className="text-kc-muted text-sm mb-6">This can&apos;t be undone.</p>
-        <div className="flex gap-2">
+        <p className="text-kc-muted text-sm mb-7">This can&apos;t be undone.</p>
+        <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 h-11 rounded-xl border border-kc-gold/15 text-kc-muted hover:text-kc-cream text-sm"
+            className="flex-1 h-11 rounded-xl bg-kc-charcoal-2 text-kc-muted hover:text-kc-cream text-sm"
           >
             Cancel
           </button>
@@ -295,12 +295,12 @@ function ConfirmDeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onC
 }
 
 const inputClass =
-  "w-full h-10 rounded-xl bg-kc-charcoal-2 border border-kc-gold/15 px-3 text-sm text-kc-cream placeholder:text-kc-muted focus:outline-none focus:border-kc-orange/50";
+  "w-full h-11 rounded-xl bg-kc-charcoal-2 px-3.5 text-sm text-kc-cream placeholder:text-kc-muted focus:outline-none focus:ring-2 focus:ring-kc-orange/50";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs text-kc-muted mb-1">{label}</span>
+      <span className="block text-xs text-kc-muted mb-1.5">{label}</span>
       {children}
     </label>
   );

@@ -36,20 +36,20 @@ export default function PinPad({
         {Array.from({ length: Math.max(pin.length, 4) }).map((_, i) => (
           <span
             key={i}
-            className={`h-3.5 w-3.5 rounded-full border border-kc-gold/50 transition-colors ${
-              i < pin.length ? "bg-kc-orange border-kc-orange" : "bg-transparent"
+            className={`h-3.5 w-3.5 rounded-full transition-colors ${
+              i < pin.length ? "bg-kc-orange" : "bg-kc-charcoal-3"
             }`}
           />
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3.5">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
           <button
             key={d}
             type="button"
             onClick={() => press(d)}
-            className="h-16 rounded-2xl bg-kc-charcoal-2 border border-kc-gold/15 text-xl font-semibold text-kc-cream hover:border-kc-orange/60 hover:bg-kc-charcoal-3 active:scale-95 transition"
+            className="h-16 rounded-2xl bg-kc-charcoal-2 text-xl font-semibold text-kc-cream hover:bg-kc-charcoal-3 active:scale-95 transition"
           >
             {d}
           </button>
@@ -57,14 +57,14 @@ export default function PinPad({
         <button
           type="button"
           onClick={backspace}
-          className="h-16 rounded-2xl bg-kc-charcoal-2 border border-kc-gold/15 text-sm text-kc-muted hover:border-kc-red/60 active:scale-95 transition"
+          className="h-16 rounded-2xl bg-kc-charcoal-2 text-sm text-kc-muted hover:text-kc-red active:scale-95 transition"
         >
           ⌫
         </button>
         <button
           type="button"
           onClick={() => press("0")}
-          className="h-16 rounded-2xl bg-kc-charcoal-2 border border-kc-gold/15 text-xl font-semibold text-kc-cream hover:border-kc-orange/60 hover:bg-kc-charcoal-3 active:scale-95 transition"
+          className="h-16 rounded-2xl bg-kc-charcoal-2 text-xl font-semibold text-kc-cream hover:bg-kc-charcoal-3 active:scale-95 transition"
         >
           0
         </button>

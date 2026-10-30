@@ -13,7 +13,7 @@ export default function OrdersClient({ orders, items }: { orders: OrderWithItems
   const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {orders.length === 0 ? (
         <p className="text-kc-muted text-sm text-center py-16">No orders in this range.</p>
       ) : (
@@ -22,16 +22,16 @@ export default function OrdersClient({ orders, items }: { orders: OrderWithItems
           return (
             <div
               key={order.id}
-              className={`rounded-2xl border overflow-hidden ${
+              className={`rounded-2xl overflow-hidden ${
                 order.status === "voided"
-                  ? "border-kc-red/20 bg-kc-red/5 opacity-60"
+                  ? "bg-kc-red/5 opacity-60"
                   : order.status === "returned"
-                    ? "border-kc-gold/30 bg-kc-gold/5 opacity-70"
-                    : "border-kc-gold/10 bg-kc-charcoal-2"
+                    ? "bg-kc-gold/5 opacity-70"
+                    : "bg-kc-charcoal-2"
               }`}
             >
               <button
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+                className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
                 onClick={() => setExpandedId(expanded ? null : order.id)}
               >
                 <div>
@@ -42,7 +42,7 @@ export default function OrdersClient({ orders, items }: { orders: OrderWithItems
                       <span className="ml-2 text-xs text-kc-gold-light uppercase">Returned</span>
                     )}
                   </div>
-                  <div className="text-xs text-kc-muted">
+                  <div className="text-xs text-kc-muted mt-1">
                     {formatDateTime(order.created_at)} · {order.payment_method} · {order.created_by ?? "—"}
                     {order.edited_at && <> · edited by {order.edited_by}</>}
                   </div>
@@ -54,8 +54,8 @@ export default function OrdersClient({ orders, items }: { orders: OrderWithItems
               </button>
 
               {expanded && (
-                <div className="px-4 pb-4 border-t border-kc-gold/10 pt-3">
-                  <div className="text-xs text-kc-cream/80 space-y-0.5 mb-3">
+                <div className="px-5 pb-5 pt-1">
+                  <div className="text-xs text-kc-cream/80 space-y-1 mb-4">
                     {order.order_items.map((li) => (
                       <div key={li.id} className="flex justify-between">
                         <span>
@@ -68,9 +68,9 @@ export default function OrdersClient({ orders, items }: { orders: OrderWithItems
                       </div>
                     ))}
                   </div>
-                  {order.note && <div className="text-xs text-kc-muted italic mb-3">“{order.note}”</div>}
+                  {order.note && <div className="text-xs text-kc-muted italic mb-4">“{order.note}”</div>}
                   {order.status === "completed" && (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-5">
                       <button
                         onClick={() => setEditingOrder(order)}
                         className="text-xs text-kc-gold-light hover:underline"

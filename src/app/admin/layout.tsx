@@ -17,8 +17,8 @@ const NAV = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex-1 flex min-h-full flex-col md:flex-row">
-      <aside className="md:w-56 shrink-0 border-b md:border-b-0 md:border-r border-kc-gold/10 bg-kc-charcoal flex md:flex-col">
-        <div className="flex items-center gap-2 px-5 py-4">
+      <aside className="md:w-60 shrink-0 bg-kc-charcoal flex md:flex-col">
+        <div className="flex items-center gap-2.5 px-6 py-5">
           <Image src="/logo-icon.png" alt="Khan Chaye" width={30} height={30} />
           <div className="leading-tight">
             <div className="font-display text-xs tracking-wide">KHAN CHAYE</div>
@@ -26,29 +26,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        <nav className="flex md:flex-col gap-1 px-3 py-2 overflow-x-auto md:overflow-visible flex-1">
+        <nav className="flex md:flex-col gap-1 px-4 py-2 overflow-x-auto md:overflow-visible flex-1">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="px-3 py-2 rounded-lg text-sm text-kc-cream/90 hover:bg-kc-charcoal-2 whitespace-nowrap transition"
+              className="px-4 py-2.5 rounded-xl text-sm text-kc-cream/90 hover:bg-kc-charcoal-2 whitespace-nowrap transition"
             >
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="px-3 py-3 flex md:flex-col gap-1 border-t border-kc-gold/10 md:border-t-0">
+        <div className="px-4 py-4 flex md:flex-col gap-1">
           <Link
             href="/pos"
-            className="px-3 py-2 rounded-lg text-sm text-kc-gold-light hover:bg-kc-charcoal-2 transition whitespace-nowrap"
+            className="px-4 py-2.5 rounded-xl text-sm text-kc-gold-light hover:bg-kc-charcoal-2 transition whitespace-nowrap"
           >
             Open POS →
           </Link>
           <form action={logoutAction}>
             <button
               type="submit"
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-kc-muted hover:text-kc-red hover:bg-kc-charcoal-2 transition whitespace-nowrap"
+              className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-kc-muted hover:text-kc-red hover:bg-kc-charcoal-2 transition whitespace-nowrap"
             >
               Logout
             </button>

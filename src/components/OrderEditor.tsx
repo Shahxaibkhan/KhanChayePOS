@@ -112,8 +112,8 @@ export default function OrderEditor({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
-      <div className="bg-kc-charcoal border border-kc-gold/20 rounded-3xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-kc-gold/10">
+      <div className="bg-kc-charcoal rounded-3xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-5">
           <h3 className="font-display text-lg">Edit Order #{order.order_number}</h3>
           <button onClick={onClose} className="text-kc-muted hover:text-kc-cream text-sm">
             Close ✕
@@ -122,31 +122,31 @@ export default function OrderEditor({
 
         <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
           {/* Add items */}
-          <div className="flex-1 flex flex-col min-h-0 border-b md:border-b-0 md:border-r border-kc-gold/10">
-            <div className="flex gap-2 overflow-x-auto px-4 py-3 border-b border-kc-gold/10">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex gap-2 overflow-x-auto px-6 pb-4">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs border transition ${
+                  className={`shrink-0 px-4 py-2 rounded-full text-xs font-medium transition ${
                     activeCategory === cat
-                      ? "bg-kc-orange border-kc-orange text-white"
-                      : "border-kc-gold/20 text-kc-muted hover:border-kc-orange/50"
+                      ? "bg-kc-orange text-white"
+                      : "bg-kc-charcoal-2 text-kc-muted hover:text-kc-cream"
                   }`}
                 >
                   {cat}
                 </button>
               ))}
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-3 max-h-64 md:max-h-none">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="flex-1 overflow-y-auto px-6 pb-4 max-h-60 md:max-h-none">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {visibleItems.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => addItem(item)}
-                    className="text-left rounded-xl border border-kc-gold/15 bg-kc-charcoal-2 p-3 hover:border-kc-orange/50 active:scale-[0.97] transition"
+                    className="text-left rounded-xl bg-kc-charcoal-2 p-3.5 hover:bg-kc-charcoal-3 active:scale-[0.97] transition"
                   >
-                    <div className="text-xs text-kc-cream mb-0.5">{item.name}</div>
+                    <div className="text-xs text-kc-cream mb-1">{item.name}</div>
                     <div className="text-xs text-kc-gold-light font-medium">{formatMoney(item.price)}</div>
                   </button>
                 ))}
@@ -155,29 +155,29 @@ export default function OrderEditor({
           </div>
 
           {/* Current lines */}
-          <div className="w-full md:w-[340px] shrink-0 flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+          <div className="w-full md:w-[380px] shrink-0 flex flex-col min-h-0 bg-kc-charcoal-2/40">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
               {lines.length === 0 ? (
                 <p className="text-kc-muted text-sm text-center mt-6">No items — tap some to add, or cancel this order instead.</p>
               ) : (
                 Object.entries(cart).map(([key, line]) => (
-                  <div key={key} className="space-y-1.5">
+                  <div key={key}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <div className="text-sm text-kc-cream truncate">{line.name}</div>
-                        <div className="text-xs text-kc-muted">{formatMoney(line.unitPrice)} each</div>
+                        <div className="text-xs text-kc-muted mt-0.5">{formatMoney(line.unitPrice)} each</div>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => setQty(key, line.quantity - 1)}
-                          className="h-6 w-6 rounded-full border border-kc-gold/20 text-kc-cream text-xs hover:border-kc-orange/60"
+                          className="h-7 w-7 rounded-full bg-kc-charcoal-3 text-kc-cream text-sm hover:opacity-80"
                         >
                           −
                         </button>
                         <span className="w-5 text-center text-sm">{line.quantity}</span>
                         <button
                           onClick={() => setQty(key, line.quantity + 1)}
-                          className="h-6 w-6 rounded-full border border-kc-gold/20 text-kc-cream text-xs hover:border-kc-orange/60"
+                          className="h-7 w-7 rounded-full bg-kc-charcoal-3 text-kc-cream text-sm hover:opacity-80"
                         >
                           +
                         </button>
@@ -186,41 +186,50 @@ export default function OrderEditor({
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between pl-0.5">
-                      <span className="text-[11px] text-kc-muted">🥡 Parcel (+{formatMoney(PARCEL_FEE_PER_CUP)}/cup)</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setParcelQty(key, line.parcelQty - 1)}
-                          disabled={line.parcelQty <= 0}
-                          className="h-5 w-5 rounded-full border border-kc-gold/15 text-kc-muted text-xs disabled:opacity-30"
-                        >
-                          −
-                        </button>
-                        <span className="w-4 text-center text-[11px] text-kc-gold-light">{line.parcelQty}</span>
-                        <button
-                          onClick={() => setParcelQty(key, line.parcelQty + 1)}
-                          disabled={line.parcelQty >= line.quantity}
-                          className="h-5 w-5 rounded-full border border-kc-gold/15 text-kc-muted text-xs disabled:opacity-30"
-                        >
-                          +
-                        </button>
+
+                    {line.parcelQty === 0 ? (
+                      <button
+                        onClick={() => setParcelQty(key, 1)}
+                        className="text-[11px] text-kc-muted hover:text-kc-gold-light mt-1.5"
+                      >
+                        🥡 Mark as parcel +{formatMoney(PARCEL_FEE_PER_CUP)}
+                      </button>
+                    ) : (
+                      <div className="flex items-center justify-between mt-1.5 bg-kc-charcoal-3 rounded-lg px-3 py-1.5">
+                        <span className="text-[11px] text-kc-gold-light">🥡 Parcel · +{formatMoney(PARCEL_FEE_PER_CUP)}/cup</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setParcelQty(key, line.parcelQty - 1)}
+                            className="h-5 w-5 rounded-full text-kc-muted text-xs hover:text-kc-cream"
+                          >
+                            −
+                          </button>
+                          <span className="w-4 text-center text-[11px] text-kc-gold-light">{line.parcelQty}</span>
+                          <button
+                            onClick={() => setParcelQty(key, line.parcelQty + 1)}
+                            disabled={line.parcelQty >= line.quantity}
+                            className="h-5 w-5 rounded-full text-kc-muted text-xs hover:text-kc-cream disabled:opacity-30"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))
               )}
             </div>
 
-            <div className="px-4 py-4 border-t border-kc-gold/10 space-y-3">
+            <div className="px-6 py-5 space-y-4">
               <div className="flex gap-2">
                 {(["cash", "card", "online"] as PaymentMethod[]).map((pm) => (
                   <button
                     key={pm}
                     onClick={() => setPaymentMethod(pm)}
-                    className={`flex-1 py-1.5 rounded-xl text-[11px] uppercase tracking-wide border transition ${
+                    className={`flex-1 py-2 rounded-xl text-[11px] uppercase tracking-wide font-medium transition ${
                       paymentMethod === pm
-                        ? "bg-kc-gold/15 border-kc-gold text-kc-gold-light"
-                        : "border-kc-gold/15 text-kc-muted hover:border-kc-gold/40"
+                        ? "bg-kc-gold/20 text-kc-gold-light"
+                        : "bg-kc-charcoal-3 text-kc-muted hover:text-kc-cream"
                     }`}
                   >
                     {pm}
@@ -231,17 +240,17 @@ export default function OrderEditor({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Note (optional)"
-                className="w-full h-9 rounded-xl bg-kc-charcoal-2 border border-kc-gold/15 px-3 text-sm placeholder:text-kc-muted focus:outline-none focus:border-kc-orange/50"
+                className="w-full h-10 rounded-xl bg-kc-charcoal-3 px-3.5 text-sm placeholder:text-kc-muted focus:outline-none focus:ring-2 focus:ring-kc-orange/50"
               />
               {error && <p className="text-xs text-kc-red">{error}</p>}
-              <div className="flex items-center justify-between text-base font-semibold">
+              <div className="flex items-center justify-between">
                 <span className="text-kc-muted text-sm">Total</span>
-                <span className="text-kc-gold-light font-display">{formatMoney(total)}</span>
+                <span className="text-kc-gold-light font-display text-lg">{formatMoney(total)}</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={onClose}
-                  className="flex-1 h-11 rounded-xl border border-kc-gold/15 text-kc-muted hover:text-kc-cream text-sm"
+                  className="flex-1 h-11 rounded-xl bg-kc-charcoal-3 text-kc-muted hover:text-kc-cream text-sm"
                 >
                   Cancel
                 </button>

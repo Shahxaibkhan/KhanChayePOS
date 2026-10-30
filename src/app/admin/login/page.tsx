@@ -16,7 +16,7 @@ export default async function AdminLoginPage({
       <p className="text-kc-muted text-sm mb-10 uppercase tracking-[0.2em]">Admin Login</p>
 
       {error ? (
-        <p className="mb-5 text-sm text-kc-red bg-kc-red/10 border border-kc-red/30 rounded-lg px-4 py-2">
+        <p className="mb-5 text-sm text-kc-red bg-kc-red/10 rounded-lg px-4 py-2.5">
           Wrong password. Try again.
         </p>
       ) : null}
@@ -28,7 +28,7 @@ export default async function AdminLoginPage({
           name="password"
           autoFocus
           placeholder="Admin password"
-          className="h-14 rounded-2xl bg-kc-charcoal-2 border border-kc-gold/15 px-5 text-kc-cream placeholder:text-kc-muted focus:outline-none focus:border-kc-orange/60 text-center tracking-wide"
+          className="h-14 rounded-2xl bg-kc-charcoal-2 px-5 text-kc-cream placeholder:text-kc-muted focus:outline-none focus:ring-2 focus:ring-kc-orange/50 text-center tracking-wide"
         />
         <button
           type="submit"

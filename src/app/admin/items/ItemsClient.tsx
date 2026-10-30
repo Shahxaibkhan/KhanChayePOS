@@ -25,52 +25,52 @@ export default function ItemsClient({ items }: { items: Item[] }) {
   const categories = useMemo(() => [...new Set(items.map((i) => i.category))], [items]);
 
   return (
-    <div className="px-4 sm:px-6 py-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-5 sm:px-8 py-8 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-7">
         <h1 className="font-display text-xl tracking-wide">Items</h1>
         <button
           onClick={() => setCreating(true)}
-          className="px-4 py-2 rounded-xl bg-gradient-to-br from-kc-orange to-kc-orange-2 text-white text-sm font-semibold"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-br from-kc-orange to-kc-orange-2 text-white text-sm font-semibold"
         >
           + Add Item
         </button>
       </div>
 
-      <div className="rounded-2xl border border-kc-gold/10 overflow-hidden">
+      <div className="rounded-2xl bg-kc-charcoal-2 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-kc-charcoal-2 text-kc-muted text-xs uppercase tracking-wide">
+          <thead className="text-kc-muted text-xs uppercase tracking-wide">
             <tr>
-              <th className="text-left px-4 py-3">Name</th>
-              <th className="text-left px-4 py-3">Category</th>
-              <th className="text-right px-4 py-3">Price</th>
-              <th className="text-right px-4 py-3">Cost</th>
-              <th className="text-center px-4 py-3">Active</th>
-              <th className="px-4 py-3" />
+              <th className="text-left px-5 py-4">Name</th>
+              <th className="text-left px-5 py-4">Category</th>
+              <th className="text-right px-5 py-4">Price</th>
+              <th className="text-right px-5 py-4">Cost</th>
+              <th className="text-center px-5 py-4">Active</th>
+              <th className="px-5 py-4" />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-kc-charcoal-3">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center text-kc-muted py-10">
+                <td colSpan={6} className="text-center text-kc-muted py-12">
                   No items yet. Add your first one.
                 </td>
               </tr>
             ) : (
               items.map((item) => (
-                <tr key={item.id} className="border-t border-kc-gold/5 hover:bg-kc-charcoal-2/60">
-                  <td className="px-4 py-3 text-kc-cream">{item.name}</td>
-                  <td className="px-4 py-3 text-kc-muted">{item.category}</td>
-                  <td className="px-4 py-3 text-right text-kc-gold-light">{formatMoney(item.price)}</td>
-                  <td className="px-4 py-3 text-right text-kc-muted">{formatMoney(item.cost)}</td>
-                  <td className="px-4 py-3 text-center">
+                <tr key={item.id} className="hover:bg-kc-charcoal-3/50 transition">
+                  <td className="px-5 py-4 text-kc-cream">{item.name}</td>
+                  <td className="px-5 py-4 text-kc-muted">{item.category}</td>
+                  <td className="px-5 py-4 text-right text-kc-gold-light">{formatMoney(item.price)}</td>
+                  <td className="px-5 py-4 text-right text-kc-muted">{formatMoney(item.cost)}</td>
+                  <td className="px-5 py-4 text-center">
                     <span
                       className={`inline-block h-2.5 w-2.5 rounded-full ${
                         item.is_active ? "bg-kc-green" : "bg-kc-muted"
                       }`}
                     />
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-3">
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-4">
                       <button
                         onClick={() => setEditing(item)}
                         className="text-xs text-kc-gold-light hover:underline"
@@ -159,10 +159,10 @@ function ItemModal({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-4">
-      <div className="bg-kc-charcoal border border-kc-gold/20 rounded-3xl p-6 w-full max-w-sm">
-        <h3 className="font-display text-lg mb-4">{initial ? "Edit Item" : "Add Item"}</h3>
+      <div className="bg-kc-charcoal rounded-3xl p-7 w-full max-w-sm shadow-2xl">
+        <h3 className="font-display text-lg mb-5">{initial ? "Edit Item" : "Add Item"}</h3>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Field label="Name">
             <input
               value={form.name}
@@ -187,7 +187,7 @@ function ItemModal({
             </datalist>
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <Field label="Price (Rs)">
               <input
                 type="number"
@@ -217,7 +217,7 @@ function ItemModal({
             />
           </Field>
 
-          <label className="flex items-center gap-2 text-sm text-kc-cream/90 pt-1">
+          <label className="flex items-center gap-2.5 text-sm text-kc-cream/90 pt-1">
             <input
               type="checkbox"
               checked={form.isActive}
@@ -228,12 +228,12 @@ function ItemModal({
           </label>
         </div>
 
-        {error && <p className="text-xs text-kc-red mt-3">{error}</p>}
+        {error && <p className="text-xs text-kc-red mt-4">{error}</p>}
 
-        <div className="flex gap-2 mt-6">
+        <div className="flex gap-3 mt-7">
           <button
             onClick={onClose}
-            className="flex-1 h-11 rounded-xl border border-kc-gold/15 text-kc-muted hover:text-kc-cream text-sm"
+            className="flex-1 h-11 rounded-xl bg-kc-charcoal-2 text-kc-muted hover:text-kc-cream text-sm"
           >
             Cancel
           </button>
@@ -254,15 +254,15 @@ function ConfirmDeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onC
   const [busy, setBusy] = useState(false);
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-4">
-      <div className="bg-kc-charcoal border border-kc-gold/20 rounded-3xl p-6 w-full max-w-sm text-center">
+      <div className="bg-kc-charcoal rounded-3xl p-7 w-full max-w-sm text-center shadow-2xl">
         <h3 className="font-display text-lg mb-2">Delete this item?</h3>
-        <p className="text-kc-muted text-sm mb-6">
+        <p className="text-kc-muted text-sm mb-7">
           It will disappear from the POS. Past orders that used it are unaffected.
         </p>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 h-11 rounded-xl border border-kc-gold/15 text-kc-muted hover:text-kc-cream text-sm"
+            className="flex-1 h-11 rounded-xl bg-kc-charcoal-2 text-kc-muted hover:text-kc-cream text-sm"
           >
             Cancel
           </button>
@@ -283,12 +283,12 @@ function ConfirmDeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onC
 }
 
 const inputClass =
-  "w-full h-10 rounded-xl bg-kc-charcoal-2 border border-kc-gold/15 px-3 text-sm text-kc-cream placeholder:text-kc-muted focus:outline-none focus:border-kc-orange/50";
+  "w-full h-11 rounded-xl bg-kc-charcoal-2 px-3.5 text-sm text-kc-cream placeholder:text-kc-muted focus:outline-none focus:ring-2 focus:ring-kc-orange/50";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs text-kc-muted mb-1">{label}</span>
+      <span className="block text-xs text-kc-muted mb-1.5">{label}</span>
       {children}
     </label>
   );

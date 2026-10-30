@@ -17,7 +17,7 @@ export default async function StaffLoginPage({
       <p className="text-kc-muted text-sm mb-10 uppercase tracking-[0.2em]">Staff Login</p>
 
       {error ? (
-        <p className="mb-5 text-sm text-kc-red bg-kc-red/10 border border-kc-red/30 rounded-lg px-4 py-2">
+        <p className="mb-5 text-sm text-kc-red bg-kc-red/10 rounded-lg px-4 py-2.5">
           Wrong PIN. Try again.
         </p>
       ) : null}
