@@ -1,6 +1,7 @@
 import "server-only";
 import { supabase } from "@/lib/supabase";
 import { PARCEL_FEE_PER_CUP } from "@/lib/constants";
+import { karachiDayEndUTC, karachiDayStartUTC } from "@/lib/date";
 import type { CartLine, Order, OrderWithItems, PaymentMethod } from "@/lib/types";
 
 function lineTotal(line: CartLine): number {
@@ -72,8 +73,8 @@ export async function listOrders(opts: {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (opts.from) query = query.gte("created_at", `${opts.from}T00:00:00`);
-  if (opts.to) query = query.lte("created_at", `${opts.to}T23:59:59.999`);
+  if (opts.from) query = query.gte("created_at", karachiDayStartUTC(opts.from));
+  if (opts.to) query = query.lte("created_at", karachiDayEndUTC(opts.to));
   if (opts.limit) query = query.limit(opts.limit);
 
   const { data, error } = await query;
@@ -155,8 +156,8 @@ export async function listOrdersWithItems(opts: {
     .select("*, order_items(*)")
     .order("created_at", { ascending: false });
 
-  if (opts.from) query = query.gte("created_at", `${opts.from}T00:00:00`);
-  if (opts.to) query = query.lte("created_at", `${opts.to}T23:59:59.999`);
+  if (opts.from) query = query.gte("created_at", karachiDayStartUTC(opts.from));
+  if (opts.to) query = query.lte("created_at", karachiDayEndUTC(opts.to));
 
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load orders: ${error.message}`);

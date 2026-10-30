@@ -1,5 +1,6 @@
 import "server-only";
 import { supabase } from "@/lib/supabase";
+import { karachiDayEndUTC, karachiDayStartUTC } from "@/lib/date";
 
 export type DashboardStats = {
   salesTotal: number;
@@ -13,6 +14,9 @@ export type DashboardStats = {
 };
 
 export async function getDashboardStats(from: string, to: string): Promise<DashboardStats> {
+  const dayStart = karachiDayStartUTC(from);
+  const dayEnd = karachiDayEndUTC(to);
+
   const [
     { data: orders, error: ordersError },
     { data: statusRows, error: statusError },
@@ -24,14 +28,14 @@ export async function getDashboardStats(from: string, to: string): Promise<Dashb
       .from("orders")
       .select("total")
       .eq("status", "completed")
-      .gte("created_at", `${from}T00:00:00`)
-      .lte("created_at", `${to}T23:59:59.999`),
+      .gte("created_at", dayStart)
+      .lte("created_at", dayEnd),
     supabase
       .from("orders")
       .select("status")
       .neq("status", "completed")
-      .gte("created_at", `${from}T00:00:00`)
-      .lte("created_at", `${to}T23:59:59.999`),
+      .gte("created_at", dayStart)
+      .lte("created_at", dayEnd),
     supabase
       .from("expenses")
       .select("amount")
@@ -46,8 +50,8 @@ export async function getDashboardStats(from: string, to: string): Promise<Dashb
       .from("order_items")
       .select("item_name, quantity, line_total, orders!inner(status, created_at)")
       .eq("orders.status", "completed")
-      .gte("orders.created_at", `${from}T00:00:00`)
-      .lte("orders.created_at", `${to}T23:59:59.999`),
+      .gte("orders.created_at", dayStart)
+      .lte("orders.created_at", dayEnd),
   ]);
 
   if (ordersError) throw new Error(`Failed to load sales: ${ordersError.message}`);
