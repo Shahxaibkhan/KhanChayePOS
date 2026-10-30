@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { CartLine, Item, PaymentMethod } from "@/lib/types";
 import { formatMoney } from "@/lib/date";
 import { PARCEL_FEE_PER_CUP } from "@/lib/constants";
+import { groupItemsForDisplay, type DisplayRow } from "@/lib/groupItems";
 import { submitOrderAction } from "./actions";
 
 function lineTotal(line: CartLine): number {
@@ -26,6 +27,23 @@ export default function PosClient({ items }: { items: Item[] }) {
   const [receipt, setReceipt] = useState<{ orderNumber: number; total: number } | null>(null);
 
   const visibleItems = activeCategory === "All" ? items : items.filter((i) => i.category === activeCategory);
+
+  const sections = useMemo(() => {
+    if (activeCategory !== "All") {
+      return [{ category: activeCategory, rows: groupItemsForDisplay(visibleItems) }];
+    }
+    const byCategory = new Map<string, Item[]>();
+    for (const item of visibleItems) {
+      const list = byCategory.get(item.category) ?? [];
+      list.push(item);
+      byCategory.set(item.category, list);
+    }
+    return [...byCategory.entries()].map(([category, catItems]) => ({
+      category,
+      rows: groupItemsForDisplay(catItems),
+    }));
+  }, [visibleItems, activeCategory]);
+
   const lines = Object.values(cart);
   const totalQty = lines.reduce((s, l) => s + l.quantity, 0);
   const parcelQtyTotal = lines.reduce((s, l) => s + l.parcelQty, 0);
@@ -111,7 +129,7 @@ export default function PosClient({ items }: { items: Item[] }) {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`shrink-0 px-5 py-2.5 rounded-full text-sm font-medium transition ${
+              className={`shrink-0 px-5 py-3 rounded-full text-[15px] font-medium transition ${
                 activeCategory === cat
                   ? "bg-kc-orange text-white"
                   : "bg-kc-charcoal-2 text-kc-muted hover:text-kc-cream"
@@ -128,29 +146,21 @@ export default function PosClient({ items }: { items: Item[] }) {
               No items in this category yet. Add some from Admin → Items.
             </p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {visibleItems.map((item) => {
-                const qty = cart[item.id]?.quantity ?? 0;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => addItem(item)}
-                    className={`relative text-left rounded-2xl p-5 transition active:scale-[0.97] ${
-                      qty > 0
-                        ? "bg-kc-orange/15 ring-2 ring-kc-orange"
-                        : "bg-kc-charcoal-2 hover:bg-kc-charcoal-3"
-                    }`}
-                  >
-                    {qty > 0 && (
-                      <span className="absolute -top-2.5 -right-2.5 h-7 w-7 rounded-full bg-kc-orange text-white text-sm font-bold flex items-center justify-center shadow-lg">
-                        {qty}
-                      </span>
-                    )}
-                    <div className="text-[15px] leading-snug font-medium text-kc-cream mb-2">{item.name}</div>
-                    <div className="text-kc-gold-light text-sm font-semibold">{formatMoney(item.price)}</div>
-                  </button>
-                );
-              })}
+            <div className="space-y-6">
+              {sections.map((section) => (
+                <div key={section.category}>
+                  {activeCategory === "All" && (
+                    <h3 className="text-xs text-kc-muted uppercase tracking-[0.15em] mb-2.5 px-1">
+                      {section.category}
+                    </h3>
+                  )}
+                  <div className="space-y-2.5">
+                    {section.rows.map((row) => (
+                      <ItemRow key={rowKey(row)} row={row} cart={cart} onAdd={addItem} />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -201,20 +211,20 @@ export default function PosClient({ items }: { items: Item[] }) {
                     <div className="flex items-center gap-2.5 shrink-0">
                       <button
                         onClick={() => setQty(line.itemId, line.quantity - 1)}
-                        className="h-8 w-8 rounded-full bg-kc-charcoal-2 text-kc-cream text-base hover:bg-kc-charcoal-3"
+                        className="h-9 w-9 rounded-full bg-kc-charcoal-2 text-kc-cream text-lg hover:bg-kc-charcoal-3"
                       >
                         −
                       </button>
                       <span className="w-5 text-center text-sm">{line.quantity}</span>
                       <button
                         onClick={() => setQty(line.itemId, line.quantity + 1)}
-                        className="h-8 w-8 rounded-full bg-kc-charcoal-2 text-kc-cream text-base hover:bg-kc-charcoal-3"
+                        className="h-9 w-9 rounded-full bg-kc-charcoal-2 text-kc-cream text-lg hover:bg-kc-charcoal-3"
                       >
                         +
                       </button>
                       <button
                         onClick={() => removeItem(line.itemId)}
-                        className="text-kc-muted hover:text-kc-red text-xs ml-0.5"
+                        className="h-9 w-9 rounded-full flex items-center justify-center text-kc-muted hover:text-kc-red text-sm"
                         title="Remove"
                       >
                         ✕
@@ -234,10 +244,10 @@ export default function PosClient({ items }: { items: Item[] }) {
                       <span className="text-[11px] text-kc-gold-light">
                         🥡 Parcel · +{formatMoney(PARCEL_FEE_PER_CUP)}/cup
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => setParcelQty(line.itemId, line.parcelQty - 1)}
-                          className="h-5 w-5 rounded-full text-kc-muted text-xs hover:text-kc-cream"
+                          className="h-7 w-7 rounded-full text-kc-muted text-sm hover:text-kc-cream"
                         >
                           −
                         </button>
@@ -245,7 +255,7 @@ export default function PosClient({ items }: { items: Item[] }) {
                         <button
                           onClick={() => setParcelQty(line.itemId, line.parcelQty + 1)}
                           disabled={line.parcelQty >= line.quantity}
-                          className="h-5 w-5 rounded-full text-kc-muted text-xs hover:text-kc-cream disabled:opacity-30"
+                          className="h-7 w-7 rounded-full text-kc-muted text-sm hover:text-kc-cream disabled:opacity-30"
                         >
                           +
                         </button>
@@ -335,6 +345,71 @@ export default function PosClient({ items }: { items: Item[] }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function rowKey(row: DisplayRow): string {
+  return row.kind === "single" ? row.item.id : `variant-${row.baseName}-${row.variants[0].item.category}`;
+}
+
+function ItemRow({
+  row,
+  cart,
+  onAdd,
+}: {
+  row: DisplayRow;
+  cart: Record<string, CartLine>;
+  onAdd: (item: Item) => void;
+}) {
+  if (row.kind === "single") {
+    const { item } = row;
+    const qty = cart[item.id]?.quantity ?? 0;
+    return (
+      <button
+        onClick={() => onAdd(item)}
+        className={`relative w-full flex items-center justify-between gap-3 rounded-2xl px-5 py-4 text-left transition active:scale-[0.98] ${
+          qty > 0 ? "bg-kc-orange/15 ring-2 ring-kc-orange" : "bg-kc-charcoal-2 hover:bg-kc-charcoal-3"
+        }`}
+      >
+        <span className="text-base font-medium text-kc-cream">{item.name}</span>
+        <span className="flex items-center gap-3 shrink-0">
+          <span className="text-kc-gold-light text-base font-semibold">{formatMoney(item.price)}</span>
+          {qty > 0 && (
+            <span className="h-7 w-7 rounded-full bg-kc-orange text-white text-sm font-bold flex items-center justify-center">
+              {qty}
+            </span>
+          )}
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl bg-kc-charcoal-2 px-5 py-4">
+      <div className="text-base font-medium text-kc-cream mb-3">{row.baseName}</div>
+      <div className="flex gap-2.5">
+        {row.variants.map(({ label, item }) => {
+          const qty = cart[item.id]?.quantity ?? 0;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onAdd(item)}
+              className={`relative flex-1 flex items-center justify-center gap-2 rounded-xl py-3 transition active:scale-[0.97] ${
+                qty > 0 ? "bg-kc-orange/20 ring-2 ring-kc-orange" : "bg-kc-charcoal-3 hover:bg-kc-charcoal-3/70"
+              }`}
+            >
+              <span className="text-sm text-kc-cream">{label}</span>
+              <span className="text-sm text-kc-gold-light font-semibold">{formatMoney(item.price)}</span>
+              {qty > 0 && (
+                <span className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-kc-orange text-white text-xs font-bold flex items-center justify-center">
+                  {qty}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
