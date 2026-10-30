@@ -27,6 +27,8 @@ export type Order = {
   status: OrderStatus;
   edited_at: string | null;
   edited_by: string | null;
+  client_id: string | null;
+  client_name: string | null;
 };
 
 export type OrderItem = {
@@ -59,6 +61,15 @@ export type CartLine = {
   unitPrice: number;
   quantity: number;
   parcelQty: number; // how many of `quantity` are packed as parcel (0..quantity)
+};
+
+export type Client = {
+  id: string;
+  name: string;
+  phone: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Wastage = {

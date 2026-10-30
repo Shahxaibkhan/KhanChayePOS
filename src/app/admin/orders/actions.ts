@@ -24,14 +24,16 @@ export async function editOrderAction(
   orderId: string,
   lines: CartLine[],
   paymentMethod: PaymentMethod,
-  note: string
+  note: string,
+  clientName: string
 ): Promise<EditResult> {
   try {
     const editedBy = await getStaffLabel();
-    await editOrder({ orderId, lines, paymentMethod, note, editedBy });
+    await editOrder({ orderId, lines, paymentMethod, note, editedBy, clientName });
     revalidatePath("/admin/orders");
     revalidatePath("/admin");
     revalidatePath("/pos/orders");
+    revalidatePath("/admin/clients");
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Something went wrong." };

@@ -1,17 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CartLine, Item, PaymentMethod } from "@/lib/types";
+import type { CartLine, Client, Item, PaymentMethod } from "@/lib/types";
 import { formatMoney } from "@/lib/date";
 import { PARCEL_FEE_PER_CUP } from "@/lib/constants";
 import { groupItemsForDisplay, type DisplayRow } from "@/lib/groupItems";
+import ClientPicker from "@/components/ClientPicker";
 import { submitOrderAction } from "./actions";
 
 function lineTotal(line: CartLine): number {
   return line.unitPrice * line.quantity + line.parcelQty * PARCEL_FEE_PER_CUP;
 }
 
-export default function PosClient({ items }: { items: Item[] }) {
+export default function PosClient({ items, clients }: { items: Item[]; clients: Client[] }) {
   const categories = useMemo(() => {
     const set = new Set(items.map((i) => i.category));
     return ["All", ...set];
@@ -21,6 +22,7 @@ export default function PosClient({ items }: { items: Item[] }) {
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [note, setNote] = useState("");
+  const [clientName, setClientName] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,13 +105,14 @@ export default function PosClient({ items }: { items: Item[] }) {
     setCart({});
     setNote("");
     setPaymentMethod("cash");
+    setClientName("");
   }
 
   async function checkout() {
     if (!lines.length || submitting) return;
     setSubmitting(true);
     setError(null);
-    const result = await submitOrderAction(lines, paymentMethod, note.trim());
+    const result = await submitOrderAction(lines, paymentMethod, note.trim(), clientName.trim());
     setSubmitting(false);
     if (result.ok) {
       setReceipt({ orderNumber: result.orderNumber, total: result.total });
@@ -283,6 +286,8 @@ export default function PosClient({ items }: { items: Item[] }) {
                 </button>
               ))}
             </div>
+
+            <ClientPicker clients={clients} value={clientName} onChange={setClientName} />
 
             <input
               value={note}

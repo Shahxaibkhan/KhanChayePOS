@@ -12,15 +12,17 @@ export type SubmitOrderResult =
 export async function submitOrderAction(
   lines: CartLine[],
   paymentMethod: PaymentMethod,
-  note: string
+  note: string,
+  clientName?: string
 ): Promise<SubmitOrderResult> {
   try {
     if (!lines.length) return { ok: false, error: "Cart is empty." };
     const createdBy = await getStaffLabel();
-    const order = await createOrder({ lines, paymentMethod, note, createdBy });
+    const order = await createOrder({ lines, paymentMethod, note, createdBy, clientName });
     revalidatePath("/pos/orders");
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
+    revalidatePath("/admin/clients");
     return { ok: true, orderNumber: order.order_number, total: Number(order.total) };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Something went wrong." };

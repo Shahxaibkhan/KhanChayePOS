@@ -1,12 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import type { Item, OrderWithItems } from "@/lib/types";
+import type { Client, Item, OrderWithItems } from "@/lib/types";
 import { formatDateTime, formatMoney } from "@/lib/date";
 import OrderEditor from "@/components/OrderEditor";
 import { editOrderAction, returnOrderAction, voidOrderAction } from "./actions";
 
-export default function OrdersClient({ orders, items }: { orders: OrderWithItems[]; items: Item[] }) {
+export default function OrdersClient({
+  orders,
+  items,
+  clients,
+}: {
+  orders: OrderWithItems[];
+  items: Item[];
+  clients: Client[];
+}) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [returningId, setReturningId] = useState<string | null>(null);
@@ -37,6 +45,11 @@ export default function OrdersClient({ orders, items }: { orders: OrderWithItems
                 <div>
                   <div className="text-sm font-medium">
                     Order #{order.order_number}
+                    {order.client_name && (
+                      <span className="ml-2 text-xs text-kc-gold-light bg-kc-gold/10 rounded-full px-2.5 py-0.5">
+                        {order.client_name}
+                      </span>
+                    )}
                     {order.status === "voided" && <span className="ml-2 text-xs text-kc-red uppercase">Voided</span>}
                     {order.status === "returned" && (
                       <span className="ml-2 text-xs text-kc-gold-light uppercase">Returned</span>
@@ -122,6 +135,7 @@ export default function OrdersClient({ orders, items }: { orders: OrderWithItems
         <OrderEditor
           order={editingOrder}
           items={items}
+          clients={clients}
           onClose={() => setEditingOrder(null)}
           onSave={editOrderAction}
         />

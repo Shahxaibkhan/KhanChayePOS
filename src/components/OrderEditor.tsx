@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CartLine, Item, OrderWithItems, PaymentMethod } from "@/lib/types";
+import type { CartLine, Client, Item, OrderWithItems, PaymentMethod } from "@/lib/types";
 import { formatMoney } from "@/lib/date";
 import { PARCEL_FEE_PER_CUP } from "@/lib/constants";
 import { groupItemsForDisplay, type DisplayRow } from "@/lib/groupItems";
+import ClientPicker from "@/components/ClientPicker";
 
 function lineTotal(line: CartLine): number {
   return line.unitPrice * line.quantity + line.parcelQty * PARCEL_FEE_PER_CUP;
@@ -30,17 +31,26 @@ export type EditResult = { ok: true } | { ok: false; error: string };
 export default function OrderEditor({
   order,
   items,
+  clients,
   onClose,
   onSave,
 }: {
   order: OrderWithItems;
   items: Item[];
+  clients: Client[];
   onClose: () => void;
-  onSave: (orderId: string, lines: CartLine[], paymentMethod: PaymentMethod, note: string) => Promise<EditResult>;
+  onSave: (
+    orderId: string,
+    lines: CartLine[],
+    paymentMethod: PaymentMethod,
+    note: string,
+    clientName: string
+  ) => Promise<EditResult>;
 }) {
   const [cart, setCart] = useState<Record<string, CartLine>>(() => cartFromOrder(order));
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(order.payment_method);
   const [note, setNote] = useState(order.note ?? "");
+  const [clientName, setClientName] = useState(order.client_name ?? "");
   const [activeCategory, setActiveCategory] = useState("All");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,7 +113,7 @@ export default function OrderEditor({
     if (!lines.length || saving) return;
     setSaving(true);
     setError(null);
-    const result = await onSave(order.id, lines, paymentMethod, note.trim());
+    const result = await onSave(order.id, lines, paymentMethod, note.trim(), clientName.trim());
     setSaving(false);
     if (result.ok) {
       onClose();
@@ -231,6 +241,7 @@ export default function OrderEditor({
                   </button>
                 ))}
               </div>
+              <ClientPicker clients={clients} value={clientName} onChange={setClientName} />
               <input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}

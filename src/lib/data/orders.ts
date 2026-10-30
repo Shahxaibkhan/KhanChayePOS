@@ -2,6 +2,7 @@ import "server-only";
 import { supabase } from "@/lib/supabase";
 import { PARCEL_FEE_PER_CUP } from "@/lib/constants";
 import { karachiDayEndUTC, karachiDayStartUTC } from "@/lib/date";
+import { findOrCreateClient } from "@/lib/data/clients";
 import type { CartLine, Order, OrderWithItems, PaymentMethod } from "@/lib/types";
 
 function lineTotal(line: CartLine): number {
@@ -13,6 +14,7 @@ export type CreateOrderInput = {
   paymentMethod: PaymentMethod;
   note?: string;
   createdBy: string;
+  clientName?: string;
 };
 
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
@@ -27,6 +29,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
 
   const subtotal = input.lines.reduce((sum, l) => sum + lineTotal(l), 0);
 
+  const client = input.clientName?.trim() ? await findOrCreateClient(input.clientName) : null;
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -35,6 +39,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       payment_method: input.paymentMethod,
       note: input.note || null,
       created_by: input.createdBy,
+      client_id: client?.id ?? null,
+      client_name: client?.name ?? null,
     })
     .select("*")
     .single();
@@ -111,6 +117,7 @@ export type EditOrderInput = {
   paymentMethod: PaymentMethod;
   note: string;
   editedBy: string;
+  clientName?: string;
 };
 
 /** Replaces an order's line items and recalculates its total in one DB
@@ -136,12 +143,16 @@ export async function editOrder(input: EditOrderInput): Promise<void> {
     line_total: lineTotal(l),
   }));
 
+  const client = input.clientName?.trim() ? await findOrCreateClient(input.clientName) : null;
+
   const { error } = await supabase.rpc("edit_order", {
     p_order_id: input.orderId,
     p_items: items,
     p_payment_method: input.paymentMethod,
     p_note: input.note,
     p_editor: input.editedBy,
+    p_client_id: client?.id ?? null,
+    p_client_name: client?.name ?? null,
   });
 
   if (error) throw new Error(`Failed to save order changes: ${error.message}`);
