@@ -1,5 +1,6 @@
 import "server-only";
 import { supabase } from "@/lib/supabase";
+import { normalizeClientName } from "@/lib/clientName";
 import type { Client } from "@/lib/types";
 
 /** Codes Postgres/PostgREST return when the `clients` table doesn't exist yet
@@ -54,9 +55,10 @@ export async function deleteClient(id: string): Promise<void> {
 }
 
 /**
- * Looks up a client by name (case-insensitive, exact match) and returns it;
- * creates it if it doesn't exist yet. This is what lets staff just type a
- * client name on an order — no separate "add client" step required.
+ * Looks up a client by name — ignoring case, spacing and punctuation, so
+ * "Dollar Shop" / "dollarshop" / "DOLLAR-SHOP" all resolve to the same
+ * client — and creates it if nothing matches. This is what lets staff just
+ * type/pick a client name on an order with no separate "add client" step.
  *
  * Returns null (rather than throwing) if the `clients` table doesn't exist
  * yet — a missing migration for this optional tag shouldn't block placing
@@ -64,12 +66,9 @@ export async function deleteClient(id: string): Promise<void> {
  */
 export async function findOrCreateClient(rawName: string): Promise<Client | null> {
   const name = rawName.trim();
+  const target = normalizeClientName(name);
 
-  const { data: existing, error: findError } = await supabase
-    .from("clients")
-    .select("*")
-    .ilike("name", name)
-    .maybeSingle();
+  const { data: all, error: findError } = await supabase.from("clients").select("*");
   if (findError) {
     if (TABLE_MISSING_CODES.has(findError.code)) {
       console.error("clients table not found — run sql/006_clients.sql in Supabase. Order placed without a client tag.");
@@ -77,6 +76,8 @@ export async function findOrCreateClient(rawName: string): Promise<Client | null
     }
     throw new Error(`Failed to look up client: ${findError.message}`);
   }
+
+  const existing = (all ?? []).find((c) => normalizeClientName(c.name) === target);
   if (existing) return existing;
 
   const { data: created, error: createError } = await supabase
@@ -86,15 +87,12 @@ export async function findOrCreateClient(rawName: string): Promise<Client | null
     .single();
 
   if (createError) {
-    // Unique violation — someone else created the same client between our
-    // lookup and insert (two staff typing the same name at once). Re-fetch
-    // rather than erroring out.
+    // Unique violation — someone else created the same (or a normalized-
+    // equivalent) client between our lookup and insert. Re-fetch instead of
+    // erroring out.
     if (createError.code === "23505") {
-      const { data: retry, error: retryError } = await supabase
-        .from("clients")
-        .select("*")
-        .ilike("name", name)
-        .maybeSingle();
+      const { data: all2, error: retryError } = await supabase.from("clients").select("*");
+      const retry = (all2 ?? []).find((c) => normalizeClientName(c.name) === target);
       if (retryError || !retry) throw new Error(`Failed to resolve client "${name}".`);
       return retry;
     }

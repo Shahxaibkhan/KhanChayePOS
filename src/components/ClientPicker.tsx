@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Client } from "@/lib/types";
+import { normalizeClientName } from "@/lib/clientName";
 
 export default function ClientPicker({
   clients,
@@ -12,77 +13,132 @@ export default function ClientPicker({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
 
   const suggestions = useMemo(() => {
-    const query = value.trim().toLowerCase();
-    const pool = query ? clients.filter((c) => c.name.toLowerCase().includes(query)) : clients;
+    const q = normalizeClientName(query);
+    const pool = q ? clients.filter((c) => normalizeClientName(c.name).includes(q)) : clients;
     return pool.slice(0, 6);
-  }, [clients, value]);
+  }, [clients, query]);
 
-  const exactMatch = clients.some((c) => c.name.toLowerCase() === value.trim().toLowerCase());
-  const willCreateNew = value.trim().length > 0 && !exactMatch;
+  const exactMatch = clients.some((c) => normalizeClientName(c.name) === normalizeClientName(query));
+  const canCreate = query.trim().length > 0 && !exactMatch;
 
-  function select(name: string) {
+  function selectExisting(name: string) {
     onChange(name);
-    setOpen(false);
+    setEditing(false);
+    setQuery("");
   }
 
-  function handleBlur() {
-    // delay so a click on a suggestion registers before the list unmounts
-    blurTimeout.current = setTimeout(() => setOpen(false), 150);
+  function createNew() {
+    if (!canCreate) return;
+    onChange(query.trim());
+    setEditing(false);
+    setQuery("");
   }
 
-  function handleFocus() {
-    if (blurTimeout.current) clearTimeout(blurTimeout.current);
-    setOpen(true);
+  function startEditing() {
+    setQuery("");
+    setEditing(true);
+  }
+
+  // Already tagged — show it as a pill, not an open text field, so it reads
+  // like a chosen tag rather than something still being typed.
+  if (!editing && value) {
+    return (
+      <div className="flex items-center justify-between bg-kc-charcoal-2 rounded-xl pl-4 pr-2 h-11">
+        <span className="text-sm text-kc-gold-light truncate">🏷️ {value}</span>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={startEditing}
+            className="px-2.5 py-1 text-xs text-kc-muted hover:text-kc-cream"
+          >
+            Change
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="px-2.5 py-1 text-xs text-kc-muted hover:text-kc-red"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={startEditing}
+        className="w-full h-11 rounded-xl bg-kc-charcoal-2 px-4 text-sm text-kc-muted text-left hover:text-kc-cream transition"
+      >
+        + Add client (optional)
+      </button>
+    );
   }
 
   return (
     <div className="relative">
       <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        placeholder="Client (optional) — e.g. Dollar Shop"
+        ref={inputRef}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onBlur={() => setTimeout(() => setEditing(false), 150)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (suggestions.length > 0 && normalizeClientName(suggestions[0].name) === normalizeClientName(query)) {
+              selectExisting(suggestions[0].name);
+            } else if (canCreate) {
+              createNew();
+            }
+          } else if (e.key === "Escape") {
+            setEditing(false);
+          }
+        }}
+        placeholder="Search or add a client…"
         className="w-full h-11 rounded-xl bg-kc-charcoal-2 px-4 text-sm placeholder:text-kc-muted focus:outline-none focus:ring-2 focus:ring-kc-orange/50"
       />
-      {value && (
-        <button
-          type="button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => onChange("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-kc-muted hover:text-kc-red text-xs"
-          title="Clear"
-        >
-          ✕
-        </button>
-      )}
 
-      {open && (suggestions.length > 0 || willCreateNew) && (
-        <div className="absolute z-10 mt-1.5 w-full rounded-xl bg-kc-charcoal-3 shadow-xl overflow-hidden">
-          {suggestions.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => select(c.name)}
-              className="w-full text-left px-4 py-2.5 text-sm text-kc-cream hover:bg-kc-charcoal-2 transition"
-            >
-              {c.name}
-            </button>
-          ))}
-          {willCreateNew && (
-            <div
-              className={`px-4 py-2.5 text-xs text-kc-gold-light ${suggestions.length > 0 ? "border-t border-kc-charcoal-2" : ""}`}
-            >
-              ↵ will add “{value.trim()}” as a new client
-            </div>
-          )}
-        </div>
-      )}
+      <div className="absolute z-10 mt-1.5 w-full rounded-xl bg-kc-charcoal-3 shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+        {suggestions.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => selectExisting(c.name)}
+            className="w-full text-left px-4 py-2.5 text-sm text-kc-cream hover:bg-kc-charcoal-2 transition"
+          >
+            {c.name}
+          </button>
+        ))}
+
+        {canCreate && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={createNew}
+            className={`w-full text-left px-4 py-2.5 text-sm text-kc-gold-light hover:bg-kc-charcoal-2 transition ${
+              suggestions.length > 0 ? "border-t border-kc-charcoal-2" : ""
+            }`}
+          >
+            + Add “{query.trim()}” as a new client
+          </button>
+        )}
+
+        {suggestions.length === 0 && !canCreate && (
+          <div className="px-4 py-2.5 text-xs text-kc-muted">Type a name to search or add a client.</div>
+        )}
+      </div>
     </div>
   );
 }

@@ -11,8 +11,8 @@ export default async function PosLayout({ children }: { children: React.ReactNod
   const role = await getRole();
 
   return (
-    <div className="flex-1 flex flex-col min-h-full">
-      <header className="flex items-center justify-between gap-4 px-5 sm:px-8 py-4 bg-kc-charcoal/90 backdrop-blur sticky top-0 z-20">
+    <div className="flex-1 flex flex-col min-h-0">
+      <header className="shrink-0 flex items-center justify-between gap-4 px-5 sm:px-8 py-4 bg-kc-charcoal/90 backdrop-blur sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <Image src="/logo-icon.png" alt="Khan Chaye" width={32} height={32} />
           <div className="leading-tight">
@@ -53,7 +53,7 @@ export default async function PosLayout({ children }: { children: React.ReactNod
         </nav>
       </header>
 
-      <div className="flex-1 flex flex-col">{children}</div>
+      <div className="flex-1 flex flex-col min-h-0">{children}</div>
     </div>
   );
 }

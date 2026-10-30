@@ -12,9 +12,11 @@ create table if not exists clients (
   updated_at  timestamptz not null default now()
 );
 
--- case-insensitive uniqueness so "Dollar Shop" and "dollar shop" can't both
--- get created by two different staff typing it slightly differently
-create unique index if not exists clients_name_unique_idx on clients (lower(name));
+-- Normalized (lowercase, spaces/punctuation stripped) uniqueness so "Dollar
+-- Shop", "dollarshop" and "DOLLAR-SHOP" can't all end up as separate rows —
+-- matches the normalizeClientName() logic in the app.
+create unique index if not exists clients_name_unique_idx
+  on clients (regexp_replace(lower(name), '[^a-z0-9]+', '', 'g'));
 
 alter table clients enable row level security;
 
