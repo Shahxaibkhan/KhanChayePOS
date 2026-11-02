@@ -1,10 +1,17 @@
 // All "which day is this" logic is anchored to Asia/Karachi (Lahore), since
 // the server (Vercel) runs in UTC and orders/expenses should bucket by the
-// shop's actual calendar day, not UTC's.
+// shop's business day, not UTC's.
+//
+// The shop runs ~12 noon to ~4 AM, so a business day doesn't end at midnight:
+// it runs from BUSINESS_DAY_START_HOUR to the same hour the next morning.
+// An order at 1 AM on the 3rd belongs to the 2nd's business day.
 const TZ = "Asia/Karachi";
+export const BUSINESS_DAY_START_HOUR = 6; // 6 AM — safely after closing, before opening
+const BUSINESS_DAY_SHIFT_MS = BUSINESS_DAY_START_HOUR * 60 * 60 * 1000;
 
+/** Today's business day (YYYY-MM-DD) — still "yesterday" until 6 AM. */
 export function todayISO(): string {
-  return toISODate(new Date());
+  return toISODate(new Date(Date.now() - BUSINESS_DAY_SHIFT_MS));
 }
 
 export function toISODate(date: Date): string {
@@ -17,7 +24,7 @@ export function toISODate(date: Date): string {
 }
 
 export function daysAgoISO(days: number): string {
-  const d = new Date();
+  const d = new Date(Date.now() - BUSINESS_DAY_SHIFT_MS);
   d.setUTCDate(d.getUTCDate() - days);
   return toISODate(d);
 }
@@ -27,23 +34,22 @@ export function daysAgoISO(days: number): string {
 const KARACHI_OFFSET_HOURS = 5;
 
 /**
- * Converts a Karachi-local calendar date (YYYY-MM-DD) into the UTC instant
- * when that day begins in Karachi. Use this (not a bare `${date}T00:00:00`
- * string) when filtering a timestamptz column like orders.created_at —
- * Postgres reads a naive timestamp string as UTC, so a plain date string
- * would miss anything placed in the first ~5 hours of the Karachi day.
+ * Converts a business day (YYYY-MM-DD) into the UTC instant it begins:
+ * BUSINESS_DAY_START_HOUR on that date, Karachi time. Use this (not a bare
+ * `${date}T00:00:00` string) when filtering a timestamptz column like
+ * orders.created_at — Postgres reads a naive timestamp string as UTC.
  */
 export function karachiDayStartUTC(dateISO: string): string {
   const d = new Date(`${dateISO}T00:00:00.000Z`);
-  d.setUTCHours(d.getUTCHours() - KARACHI_OFFSET_HOURS);
+  d.setUTCHours(d.getUTCHours() - KARACHI_OFFSET_HOURS + BUSINESS_DAY_START_HOUR);
   return d.toISOString();
 }
 
-/** The UTC instant 1ms before the next Karachi-local day begins — see karachiDayStartUTC. */
+/** The UTC instant 1ms before the next business day begins — see karachiDayStartUTC. */
 export function karachiDayEndUTC(dateISO: string): string {
   const d = new Date(`${dateISO}T00:00:00.000Z`);
   d.setUTCDate(d.getUTCDate() + 1);
-  d.setUTCHours(d.getUTCHours() - KARACHI_OFFSET_HOURS);
+  d.setUTCHours(d.getUTCHours() - KARACHI_OFFSET_HOURS + BUSINESS_DAY_START_HOUR);
   d.setUTCMilliseconds(d.getUTCMilliseconds() - 1);
   return d.toISOString();
 }
