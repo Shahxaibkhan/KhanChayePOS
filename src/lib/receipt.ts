@@ -164,6 +164,111 @@ export function buildReceipt(data: ReceiptData, copy: ReceiptCopy, opts: { repri
 }
 
 // ---------------------------------------------------------------------------
+// Collective bill: one receipt covering many orders for a client
+
+export type StatementOrder = { orderNumber: number; createdAt: string; total: number; paid: boolean };
+
+export type StatementData = {
+  clientName: string;
+  period: string; // e.g. "Today (03 Nov 2026)" or "27 Oct - 03 Nov 2026"
+  orders: StatementOrder[];
+  lines: ReceiptLine[]; // combined across all orders
+  total: number;
+  paidTotal: number;
+};
+
+/** Builds a collective bill from a client's orders (voided/returned ones are left out). */
+export function statementFromOrders(orders: OrderWithItems[], clientName: string, period: string): StatementData {
+  const billable = orders
+    .filter((o) => o.status === "completed" || o.status === "pending")
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+
+  // Same item at the same price is combined into one line.
+  const lines = new Map<string, ReceiptLine>();
+  for (const line of billable.flatMap((o) => receiptFromOrder(o).lines)) {
+    const key = `${line.name}|${line.unitPrice}|${line.parcelFee}`;
+    const existing = lines.get(key);
+    if (existing) {
+      existing.quantity += line.quantity;
+      existing.parcelQty += line.parcelQty;
+    } else lines.set(key, { ...line });
+  }
+
+  const summary = billable.map((o) => ({
+    orderNumber: o.order_number,
+    createdAt: o.created_at,
+    total: Number(o.total),
+    paid: o.status === "completed",
+  }));
+  return {
+    clientName,
+    period,
+    orders: summary,
+    lines: [...lines.values()],
+    total: summary.reduce((s, o) => s + o.total, 0),
+    paidTotal: summary.filter((o) => o.paid).reduce((s, o) => s + o.total, 0),
+  };
+}
+
+const shortStamp = (iso: string) =>
+  fmt(iso, { day: "2-digit", month: "short", hour: "numeric", minute: "2-digit", hour12: true }).replace(
+    /\b(am|pm)\b/i,
+    (m) => m.toUpperCase()
+  );
+
+export function buildStatement(data: StatementData, copy: ReceiptCopy): PrintLine[] {
+  const L: PrintLine[] = [];
+  const text = (t: string, o: Omit<Extract<PrintLine, { kind: "text" }>, "kind" | "text"> = {}) =>
+    L.push({ kind: "text", text: t, ...o });
+  const rule = () => L.push({ kind: "rule", char: "-" });
+
+  const itemCount = data.lines.reduce((s, l) => s + l.quantity, 0);
+  const due = data.total - data.paidTotal;
+
+  // Header
+  if (copy === "customer") L.push({ kind: "logo" });
+  text(SHOP_NAME, { align: "center", bold: true, size: "double" });
+  text(` CLIENT BILL - ${copy === "customer" ? "CUSTOMER" : "SHOP"} COPY `, { align: "center", bold: true, invert: true });
+  wrap(`Client: ${data.clientName}`).forEach((t) => text(t, { bold: true }));
+  wrap(`Period: ${data.period}`).forEach((t) => text(t));
+  text(`Orders: ${data.orders.length}`);
+  text(`Printed: ${stamp(new Date().toISOString())}`);
+  rule();
+
+  // Combined items
+  for (const l of data.lines) {
+    itemRows(`${l.quantity} ${l.name}`, money(l.unitPrice * l.quantity)).forEach((t) => text(t));
+    if (l.parcelQty > 0) text(row(`  +${l.parcelQty} parcel @${money(l.parcelFee)}`, money(l.parcelQty * l.parcelFee)));
+  }
+  rule();
+
+  // Totals
+  text(row(`TOTAL (${itemCount} item${itemCount === 1 ? "" : "s"})`, `Rs ${money(data.total)}`), { bold: true, size: "tall" });
+  if (data.paidTotal > 0) text(row("Paid", money(data.paidTotal)));
+  text(row("BALANCE DUE", `Rs ${money(due)}`), { bold: true, size: "tall" });
+  rule();
+
+  // Order-by-order list so the client can match it against their slips
+  text("ORDERS", { bold: true });
+  for (const o of data.orders) {
+    text(row(`#${o.orderNumber} ${shortStamp(o.createdAt)}`, `${money(o.total)} ${o.paid ? "PAID" : "DUE "}`));
+  }
+
+  // Footer
+  if (copy === "customer") {
+    rule();
+    text("Thank you for your business!", { align: "center" });
+    text(`Orders/Complaints: ${SHOP_PHONE}`, { align: "center", bold: true });
+  } else {
+    rule();
+    L.push({ kind: "feed", lines: 1 });
+    text("Received by: ____________");
+  }
+
+  return L;
+}
+
+// ---------------------------------------------------------------------------
 // ESC/POS
 
 const ESC = 0x1b;

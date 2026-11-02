@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReceiptCopy, ReceiptData } from "@/lib/receipt";
-import { connectPrinter, getSavedPrinter, printMode, printReceipt, PrinterNotConnectedError } from "@/lib/printer";
+import type { ReceiptCopy, ReceiptData, StatementData } from "@/lib/receipt";
+import {
+  connectPrinter,
+  getSavedPrinter,
+  printMode,
+  printReceipt,
+  printStatement,
+  PrinterNotConnectedError,
+} from "@/lib/printer";
 
 const OPTIONS: { label: string; copies: ReceiptCopy[] }[] = [
   { label: "Both copies", copies: ["customer", "shop"] },
@@ -10,12 +17,15 @@ const OPTIONS: { label: string; copies: ReceiptCopy[] }[] = [
   { label: "Shop", copies: ["shop"] },
 ];
 
+/** Pass `data` for a single order's receipt, or `statement` for a client's collective bill. */
 export default function PrintReceiptButtons({
   data,
+  statement,
   reprint = false,
   compact = false,
 }: {
-  data: ReceiptData;
+  data?: ReceiptData;
+  statement?: StatementData;
   reprint?: boolean;
   compact?: boolean;
 }) {
@@ -46,7 +56,8 @@ export default function PrintReceiptButtons({
     setBusy(label);
     setMessage(null);
     try {
-      await printReceipt(data, copies, { reprint });
+      if (statement) await printStatement(statement, copies);
+      else if (data) await printReceipt(data, copies, { reprint });
       setMessage({ ok: true, text: `Sent to printer — ${label.toLowerCase()}` });
     } catch (err) {
       if (err instanceof PrinterNotConnectedError) setConnected(false);

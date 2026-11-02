@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { getClient, listClients } from "@/lib/data/clients";
 import { listOrdersWithItems } from "@/lib/data/orders";
 import { listItems } from "@/lib/data/items";
-import { daysAgoISO, todayISO } from "@/lib/date";
+import { daysAgoISO, formatDate, formatMoney, todayISO } from "@/lib/date";
+import { statementFromOrders } from "@/lib/receipt";
+import PrintReceiptButtons from "@/components/PrintReceiptButtons";
 import OrdersClient from "../../orders/OrdersClient";
 
 const RANGES = [
@@ -38,11 +40,10 @@ export default async function ClientOrdersPage({
   const client = await getClient(id);
   if (!client) notFound();
 
+  const from = range.daysBack !== null ? daysAgoISO(range.daysBack) : null;
+  const to = todayISO();
   const [orders, items, clients] = await Promise.all([
-    listOrdersWithItems({
-      clientId: id,
-      ...(range.daysBack !== null && { from: daysAgoISO(range.daysBack), to: todayISO() }),
-    }),
+    listOrdersWithItems({ clientId: id, ...(from && { from, to }) }),
     listItems(),
     listClients(),
   ]);
@@ -53,6 +54,12 @@ export default async function ClientOrdersPage({
       : status.key === "unpaid"
         ? orders.filter((o) => o.status === "pending")
         : orders;
+
+  // One bill covering every order currently shown (respects the range + paid/unpaid filters).
+  const period =
+    (from === null ? "All time" : from === to ? `Today (${formatDate(to)})` : `${formatDate(from)} - ${formatDate(to)}`) +
+    (status.key === "all" ? "" : ` - ${status.label.toLowerCase()} only`);
+  const statement = statementFromOrders(shown, client.name, period);
 
   const href = (r: RangeKey, s: StatusKey) => `/pos/clients/${id}?range=${r}&status=${s}`;
   const chip = (active: boolean) =>
@@ -83,6 +90,19 @@ export default async function ClientOrdersPage({
           </Link>
         ))}
       </div>
+      {statement.orders.length > 0 && (
+        <div className="rounded-2xl bg-kc-charcoal-2 px-5 py-4 space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <span className="text-sm font-semibold text-kc-cream">🧾 Collective bill</span>
+            <span className="text-xs text-kc-muted">
+              {statement.orders.length} orders · {statement.lines.reduce((s, l) => s + l.quantity, 0)} items · Total{" "}
+              <span className="text-kc-gold-light">{formatMoney(statement.total)}</span> · Due{" "}
+              <span className="text-kc-orange font-semibold">{formatMoney(statement.total - statement.paidTotal)}</span>
+            </span>
+          </div>
+          <PrintReceiptButtons statement={statement} compact />
+        </div>
+      )}
     </div>
   );
 

@@ -7,7 +7,16 @@
 //  - Android: the RawBT app (Play Store) receives the ESC/POS bytes through
 //    an intent link and prints them on the paired printer.
 //  - Anything else: falls back to the browser print dialog.
-import { buildReceipt, toEscPos, toHtml, type ReceiptCopy, type ReceiptData } from "@/lib/receipt";
+import {
+  buildReceipt,
+  buildStatement,
+  toEscPos,
+  toHtml,
+  type PrintLine,
+  type ReceiptCopy,
+  type ReceiptData,
+  type StatementData,
+} from "@/lib/receipt";
 
 // Minimal Web Serial typings (not in TS's DOM lib yet).
 type SerialPortLike = {
@@ -109,7 +118,15 @@ export async function printReceipt(
   copies: ReceiptCopy[],
   opts: { reprint?: boolean } = {}
 ): Promise<void> {
-  const receipts = copies.map((c) => buildReceipt(data, c, opts));
+  return printLines(copies.map((c) => buildReceipt(data, c, opts)));
+}
+
+/** Collective bill for a client — see buildStatement(). */
+export async function printStatement(data: StatementData, copies: ReceiptCopy[]): Promise<void> {
+  return printLines(copies.map((c) => buildStatement(data, c)));
+}
+
+async function printLines(receipts: PrintLine[][]): Promise<void> {
   const mode = printMode();
 
   if (mode === "rawbt") return sendToRawBT(toEscPos(receipts));
