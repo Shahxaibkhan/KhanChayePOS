@@ -123,18 +123,19 @@ export default function OrderEditor({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
-      <div className="bg-kc-charcoal rounded-3xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-2 sm:px-4 py-3 sm:py-6">
+      <div className="bg-kc-charcoal rounded-3xl w-full max-w-5xl h-full max-h-[94vh] flex flex-col overflow-hidden shadow-2xl">
+        <div className="shrink-0 flex items-center justify-between px-6 py-5">
           <h3 className="font-display text-lg">Edit Order #{order.order_number}</h3>
           <button onClick={onClose} className="text-kc-muted hover:text-kc-cream text-sm">
             Close ✕
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+        {/* Body scrolls as one on small screens; on desktop each pane scrolls on its own. */}
+        <div className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden flex flex-col md:flex-row">
           {/* Add items */}
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="md:flex-1 flex flex-col md:min-h-0">
             <div className="flex gap-2 overflow-x-auto px-6 pb-4">
               {categories.map((cat) => (
                 <button
@@ -150,7 +151,7 @@ export default function OrderEditor({
                 </button>
               ))}
             </div>
-            <div className="flex-1 overflow-y-auto px-6 pb-4 max-h-60 md:max-h-none">
+            <div className="md:flex-1 md:overflow-y-auto px-6 pb-4">
               <div className="space-y-2">
                 {rows.map((row) => (
                   <PickerRow key={pickerRowKey(row)} row={row} cart={cart} onAdd={addItem} />
@@ -160,8 +161,8 @@ export default function OrderEditor({
           </div>
 
           {/* Current lines */}
-          <div className="w-full md:w-[380px] shrink-0 flex flex-col min-h-0 bg-kc-charcoal-2/40">
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          <div className="w-full md:w-[400px] shrink-0 flex flex-col md:min-h-0 md:overflow-y-auto bg-kc-charcoal-2/40">
+            <div className="px-6 py-5 space-y-5">
               {lines.length === 0 ? (
                 <p className="text-kc-muted text-sm text-center mt-6">No items — tap some to add, or cancel this order instead.</p>
               ) : (
@@ -248,27 +249,31 @@ export default function OrderEditor({
                 placeholder="Note (optional)"
                 className="w-full h-10 rounded-xl bg-kc-charcoal-3 px-3.5 text-sm placeholder:text-kc-muted focus:outline-none focus:ring-2 focus:ring-kc-orange/50"
               />
-              {error && <p className="text-xs text-kc-red">{error}</p>}
-              <div className="flex items-center justify-between">
-                <span className="text-kc-muted text-sm">Total</span>
-                <span className="text-kc-gold-light font-display text-lg">{formatMoney(total)}</span>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={onClose}
-                  className="flex-1 h-11 rounded-xl bg-kc-charcoal-3 text-kc-muted hover:text-kc-cream text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={save}
-                  disabled={!lines.length || saving}
-                  className="flex-1 h-11 rounded-xl bg-gradient-to-br from-kc-orange to-kc-orange-2 text-white font-semibold text-sm disabled:opacity-40"
-                >
-                  {saving ? "Saving…" : "Save Changes"}
-                </button>
-              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Always-visible footer so Save can't be pushed off screen */}
+        <div className="shrink-0 px-6 py-4 border-t border-kc-charcoal-3 bg-kc-charcoal">
+          {error && <p className="text-xs text-kc-red mb-3">{error}</p>}
+          <div className="flex items-center gap-4">
+            <div className="shrink-0">
+              <div className="text-kc-muted text-xs">Total</div>
+              <div className="text-kc-gold-light font-display text-lg leading-tight">{formatMoney(total)}</div>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex-1 h-11 rounded-xl bg-kc-charcoal-3 text-kc-muted hover:text-kc-cream text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={save}
+              disabled={!lines.length || saving}
+              className="flex-1 h-11 rounded-xl bg-gradient-to-br from-kc-orange to-kc-orange-2 text-white font-semibold text-sm disabled:opacity-40"
+            >
+              {saving ? "Saving…" : "Save Changes"}
+            </button>
           </div>
         </div>
       </div>
