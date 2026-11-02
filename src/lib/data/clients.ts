@@ -22,6 +22,12 @@ export async function listClients(): Promise<Client[]> {
   return data ?? [];
 }
 
+export async function getClient(id: string): Promise<Client | null> {
+  const { data, error } = await supabase.from("clients").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(`Failed to load client: ${error.message}`);
+  return data;
+}
+
 export type ClientInput = {
   name: string;
   phone: string | null;

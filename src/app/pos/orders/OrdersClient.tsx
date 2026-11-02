@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import type { Client, Item, OrderWithItems } from "@/lib/types";
 import { formatDateTime, formatMoney } from "@/lib/date";
 import OrderEditor from "@/components/OrderEditor";
@@ -13,10 +14,18 @@ export default function OrdersClient({
   orders,
   items,
   clients,
+  title = "Today's Orders",
+  toolbar,
+  emptyText = "No orders yet today.",
+  linkClients = true,
 }: {
   orders: OrderWithItems[];
   items: Item[];
   clients: Client[];
+  title?: string;
+  toolbar?: ReactNode; // rendered under the header (e.g. filters on a client's page)
+  emptyText?: string;
+  linkClients?: boolean; // client tags link to that client's order history
 }) {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
@@ -29,8 +38,8 @@ export default function OrdersClient({
 
   return (
     <div className="flex-1 px-5 sm:px-8 py-8 max-w-3xl w-full mx-auto">
-      <div className="flex items-center justify-between mb-7">
-        <h1 className="font-display text-xl tracking-wide">Today&apos;s Orders</h1>
+      <div className="flex items-center justify-between gap-4 mb-7">
+        <h1 className="font-display text-xl tracking-wide">{title}</h1>
         <div className="flex gap-6 text-right">
           {pending.length > 0 && (
             <div>
@@ -45,8 +54,10 @@ export default function OrdersClient({
         </div>
       </div>
 
+      {toolbar}
+
       {orders.length === 0 ? (
-        <p className="text-kc-muted text-sm text-center mt-16">No orders yet today.</p>
+        <p className="text-kc-muted text-sm text-center mt-16">{emptyText}</p>
       ) : (
         <div className="space-y-4">
           {sorted.map((order) => (
@@ -65,11 +76,20 @@ export default function OrdersClient({
               <div className="flex items-center justify-between mb-2">
                 <div className="text-sm font-medium">
                   Order #{order.order_number}
-                  {order.client_name && (
-                    <span className="ml-2 text-xs text-kc-gold-light bg-kc-gold/10 rounded-full px-2.5 py-0.5">
-                      {order.client_name}
-                    </span>
-                  )}
+                  {order.client_name &&
+                    (linkClients && order.client_id ? (
+                      <Link
+                        href={`/pos/clients/${order.client_id}`}
+                        title={`All orders for ${order.client_name}`}
+                        className="ml-2 text-xs text-kc-gold-light bg-kc-gold/10 hover:bg-kc-gold/25 rounded-full px-2.5 py-0.5 transition"
+                      >
+                        {order.client_name} ›
+                      </Link>
+                    ) : (
+                      <span className="ml-2 text-xs text-kc-gold-light bg-kc-gold/10 rounded-full px-2.5 py-0.5">
+                        {order.client_name}
+                      </span>
+                    ))}
                   {order.status === "pending" && (
                     <span className="ml-2 text-xs text-kc-orange uppercase font-semibold">⏳ Payment pending</span>
                   )}

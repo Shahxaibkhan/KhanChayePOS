@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Client, Item, OrderWithItems } from "@/lib/types";
 import { formatDateTime, formatMoney } from "@/lib/date";
 import OrderEditor from "@/components/OrderEditor";
@@ -16,6 +17,7 @@ export default function OrdersClient({
   items: Item[];
   clients: Client[];
 }) {
+  const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [returningId, setReturningId] = useState<string | null>(null);
@@ -49,8 +51,21 @@ export default function OrdersClient({
                   <div className="text-sm font-medium">
                     Order #{order.order_number}
                     {order.client_name && (
-                      <span className="ml-2 text-xs text-kc-gold-light bg-kc-gold/10 rounded-full px-2.5 py-0.5">
+                      // The whole row is a toggle <button>, so this can't be a nested <a>.
+                      <span
+                        role="link"
+                        title={order.client_id ? `All orders for ${order.client_name}` : undefined}
+                        onClick={(e) => {
+                          if (!order.client_id) return;
+                          e.stopPropagation();
+                          router.push(`/pos/clients/${order.client_id}`);
+                        }}
+                        className={`ml-2 text-xs text-kc-gold-light bg-kc-gold/10 rounded-full px-2.5 py-0.5 ${
+                          order.client_id ? "cursor-pointer hover:bg-kc-gold/25" : ""
+                        }`}
+                      >
                         {order.client_name}
+                        {order.client_id && " ›"}
                       </span>
                     )}
                     {order.status === "pending" && (

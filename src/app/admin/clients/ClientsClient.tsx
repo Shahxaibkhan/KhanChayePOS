@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Client } from "@/lib/types";
 import type { ClientInput } from "@/lib/data/clients";
 import { createClientAction, deleteClientAction, updateClientAction } from "./actions";
@@ -48,7 +49,11 @@ export default function ClientsClient({ clients }: { clients: Client[] }) {
             ) : (
               clients.map((c) => (
                 <tr key={c.id} className="hover:bg-kc-charcoal-3/50 transition">
-                  <td className="px-5 py-4 text-kc-cream">{c.name}</td>
+                  <td className="px-5 py-4">
+                    <Link href={`/pos/clients/${c.id}`} className="text-kc-cream hover:text-kc-gold-light hover:underline">
+                      {c.name} ›
+                    </Link>
+                  </td>
                   <td className="px-5 py-4 text-kc-muted">{c.phone || "—"}</td>
                   <td className="px-5 py-4 text-kc-muted truncate max-w-xs">{c.notes || "—"}</td>
                   <td className="px-5 py-4">

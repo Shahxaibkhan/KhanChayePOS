@@ -174,6 +174,7 @@ export async function editOrder(input: EditOrderInput): Promise<void> {
 export async function listOrdersWithItems(opts: {
   from?: string;
   to?: string;
+  clientId?: string;
 } = {}): Promise<OrderWithItems[]> {
   let query = supabase
     .from("orders")
@@ -182,6 +183,7 @@ export async function listOrdersWithItems(opts: {
 
   if (opts.from) query = query.gte("created_at", karachiDayStartUTC(opts.from));
   if (opts.to) query = query.lte("created_at", karachiDayEndUTC(opts.to));
+  if (opts.clientId) query = query.eq("client_id", opts.clientId);
 
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load orders: ${error.message}`);
