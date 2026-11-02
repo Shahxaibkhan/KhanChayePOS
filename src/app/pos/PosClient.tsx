@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CartLine, Client, Item, PaymentMethod } from "@/lib/types";
+import type { CartLine, Client, Item } from "@/lib/types";
 import { formatMoney } from "@/lib/date";
 import { PARCEL_FEE_PER_CUP } from "@/lib/constants";
 import { groupItemsForDisplay, type DisplayRow } from "@/lib/groupItems";
 import ClientPicker from "@/components/ClientPicker";
+import PrintReceiptButtons from "@/components/PrintReceiptButtons";
+import type { ReceiptData } from "@/lib/receipt";
 import { submitOrderAction } from "./actions";
 
 function lineTotal(line: CartLine): number {
@@ -20,13 +22,12 @@ export default function PosClient({ items, clients }: { items: Item[]; clients: 
 
   const [activeCategory, setActiveCategory] = useState("All");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [note, setNote] = useState("");
   const [clientName, setClientName] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [receipt, setReceipt] = useState<{ orderNumber: number; total: number } | null>(null);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
   const visibleItems = activeCategory === "All" ? items : items.filter((i) => i.category === activeCategory);
 
@@ -104,7 +105,6 @@ export default function PosClient({ items, clients }: { items: Item[]; clients: 
   function clearCart() {
     setCart({});
     setNote("");
-    setPaymentMethod("cash");
     setClientName("");
   }
 
@@ -112,10 +112,26 @@ export default function PosClient({ items, clients }: { items: Item[]; clients: 
     if (!lines.length || submitting) return;
     setSubmitting(true);
     setError(null);
-    const result = await submitOrderAction(lines, paymentMethod, note.trim(), clientName.trim());
+    const result = await submitOrderAction(lines, note.trim(), clientName.trim());
     setSubmitting(false);
     if (result.ok) {
-      setReceipt({ orderNumber: result.orderNumber, total: result.total });
+      setReceipt({
+        orderNumber: result.orderNumber,
+        createdAt: result.createdAt,
+        createdBy: result.createdBy,
+        clientName: result.clientName,
+        lines: lines.map(({ name, unitPrice, quantity, parcelQty }) => ({
+          name,
+          unitPrice,
+          quantity,
+          parcelQty,
+          parcelFee: PARCEL_FEE_PER_CUP,
+        })),
+        total: result.total,
+        paymentMethod: "cash",
+        paid: false,
+        note: note.trim() || null,
+      });
       clearCart();
       setCartOpen(false);
     } else {
@@ -271,22 +287,6 @@ export default function PosClient({ items, clients }: { items: Item[]; clients: 
           </div>
 
           <div className="px-6 py-5 space-y-4">
-            <div className="flex gap-2">
-              {(["cash", "card", "online"] as PaymentMethod[]).map((pm) => (
-                <button
-                  key={pm}
-                  onClick={() => setPaymentMethod(pm)}
-                  className={`flex-1 py-2.5 rounded-xl text-xs uppercase tracking-wide font-medium transition ${
-                    paymentMethod === pm
-                      ? "bg-kc-gold/20 text-kc-gold-light"
-                      : "bg-kc-charcoal-2 text-kc-muted hover:text-kc-cream"
-                  }`}
-                >
-                  {pm}
-                </button>
-              ))}
-            </div>
-
             <ClientPicker clients={clients} value={clientName} onChange={setClientName} />
 
             <input
@@ -335,12 +335,16 @@ export default function PosClient({ items, clients }: { items: Item[]; clients: 
       {/* Success receipt */}
       {receipt && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-6">
-          <div className="bg-kc-charcoal rounded-3xl p-9 max-w-xs w-full text-center shadow-2xl">
+          <div className="bg-kc-charcoal rounded-3xl p-9 max-w-sm w-full text-center shadow-2xl">
             <div className="h-14 w-14 rounded-full bg-kc-green/15 flex items-center justify-center mx-auto mb-5 text-kc-green text-2xl">
               ✓
             </div>
             <h3 className="font-display text-lg mb-1.5">Order #{receipt.orderNumber}</h3>
-            <p className="text-kc-muted text-sm mb-7">{formatMoney(receipt.total)} — saved successfully</p>
+            <p className="text-kc-muted text-sm mb-1">{formatMoney(receipt.total)} — saved</p>
+            <p className="text-kc-gold-light text-xs mb-7">⏳ Payment pending — mark it paid in Today&apos;s Orders</p>
+            <div className="mb-3">
+              <PrintReceiptButtons data={receipt} />
+            </div>
             <button
               onClick={() => setReceipt(null)}
               className="w-full h-12 rounded-xl bg-gradient-to-br from-kc-orange to-kc-orange-2 text-white font-semibold"

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Client, Item, OrderWithItems } from "@/lib/types";
 import { formatDateTime, formatMoney } from "@/lib/date";
 import OrderEditor from "@/components/OrderEditor";
+import MarkPaidButtons from "@/components/MarkPaidButtons";
 import { editOrderAction, returnOrderAction, voidOrderAction } from "./actions";
 
 export default function OrdersClient({
@@ -35,7 +36,9 @@ export default function OrdersClient({
                   ? "bg-kc-red/5 opacity-60"
                   : order.status === "returned"
                     ? "bg-kc-gold/5 opacity-70"
-                    : "bg-kc-charcoal-2"
+                    : order.status === "pending"
+                      ? "bg-kc-charcoal-2 ring-2 ring-kc-orange/60"
+                      : "bg-kc-charcoal-2"
               }`}
             >
               <button
@@ -50,13 +53,18 @@ export default function OrdersClient({
                         {order.client_name}
                       </span>
                     )}
+                    {order.status === "pending" && (
+                      <span className="ml-2 text-xs text-kc-orange uppercase font-semibold">⏳ Pending</span>
+                    )}
                     {order.status === "voided" && <span className="ml-2 text-xs text-kc-red uppercase">Voided</span>}
                     {order.status === "returned" && (
                       <span className="ml-2 text-xs text-kc-gold-light uppercase">Returned</span>
                     )}
                   </div>
                   <div className="text-xs text-kc-muted mt-1">
-                    {formatDateTime(order.created_at)} · {order.payment_method} · {order.created_by ?? "—"}
+                    {formatDateTime(order.created_at)} ·{" "}
+                    {order.status === "pending" ? "unpaid" : order.payment_method} · {order.created_by ?? "—"}
+                    {order.paid_at && <> · paid {formatDateTime(order.paid_at)} by {order.paid_by}</>}
                     {order.edited_at && <> · edited by {order.edited_by}</>}
                   </div>
                 </div>
@@ -82,7 +90,12 @@ export default function OrdersClient({
                     ))}
                   </div>
                   {order.note && <div className="text-xs text-kc-muted italic mb-4">“{order.note}”</div>}
-                  {order.status === "completed" && (
+                  {order.status === "pending" && (
+                    <div className="mb-4">
+                      <MarkPaidButtons orderId={order.id} total={Number(order.total)} />
+                    </div>
+                  )}
+                  {(order.status === "completed" || order.status === "pending") && (
                     <div className="flex items-center gap-5">
                       <button
                         onClick={() => setEditingOrder(order)}
@@ -105,23 +118,25 @@ export default function OrdersClient({
                       >
                         {voidingId === order.id ? "Voiding…" : "Void this order"}
                       </button>
-                      <button
-                        disabled={returningId === order.id}
-                        onClick={async () => {
-                          if (
-                            !confirm(
-                              `Mark order #${order.order_number} as returned? Use this when a customer returns/refunds an order that was already served.`
+                      {order.status === "completed" && (
+                        <button
+                          disabled={returningId === order.id}
+                          onClick={async () => {
+                            if (
+                              !confirm(
+                                `Mark order #${order.order_number} as returned? Use this when a customer returns/refunds an order that was already served.`
+                              )
                             )
-                          )
-                            return;
-                          setReturningId(order.id);
-                          await returnOrderAction(order.id);
-                          setReturningId(null);
-                        }}
-                        className="text-xs text-kc-gold-light hover:underline disabled:opacity-40"
-                      >
-                        {returningId === order.id ? "Marking…" : "Mark as returned"}
-                      </button>
+                              return;
+                            setReturningId(order.id);
+                            await returnOrderAction(order.id);
+                            setReturningId(null);
+                          }}
+                          className="text-xs text-kc-gold-light hover:underline disabled:opacity-40"
+                        >
+                          {returningId === order.id ? "Marking…" : "Mark as returned"}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

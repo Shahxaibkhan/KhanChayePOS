@@ -12,7 +12,8 @@ export type Item = {
   updated_at: string;
 };
 
-export type OrderStatus = "completed" | "voided" | "returned";
+// pending = punched, bill with the waiter, money not received yet (not counted in sales)
+export type OrderStatus = "pending" | "completed" | "voided" | "returned";
 export type PaymentMethod = "cash" | "card" | "online";
 
 export type Order = {
@@ -29,6 +30,8 @@ export type Order = {
   edited_by: string | null;
   client_id: string | null;
   client_name: string | null;
+  paid_at: string | null;
+  paid_by: string | null;
 };
 
 export type OrderItem = {

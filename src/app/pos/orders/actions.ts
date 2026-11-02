@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { editOrder, voidOrder } from "@/lib/data/orders";
+import { editOrder, markOrderPaid, voidOrder } from "@/lib/data/orders";
 import { getStaffLabel } from "@/lib/session";
 import type { CartLine, PaymentMethod } from "@/lib/types";
 import type { EditResult } from "@/components/OrderEditor";
@@ -11,6 +11,22 @@ export async function cancelOrderAction(id: string) {
   revalidatePath("/pos/orders");
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
+}
+
+export async function markPaidAction(
+  id: string,
+  paymentMethod: PaymentMethod
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await markOrderPaid(id, paymentMethod, await getStaffLabel());
+    revalidatePath("/pos/orders");
+    revalidatePath("/admin/orders");
+    revalidatePath("/admin");
+    revalidatePath("/admin/clients");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Something went wrong." };
+  }
 }
 
 export async function editOrderAction(

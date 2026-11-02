@@ -39,6 +39,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       payment_method: input.paymentMethod,
       note: input.note || null,
       created_by: input.createdBy,
+      status: "pending",
       client_id: client?.id ?? null,
       client_name: client?.name ?? null,
     })
@@ -97,6 +98,18 @@ export async function getOrderWithItems(id: string): Promise<OrderWithItems | nu
 
   if (error) throw new Error(`Failed to load order: ${error.message}`);
   return data as OrderWithItems | null;
+}
+
+/** Money received for a pending order — it now counts towards sales. */
+export async function markOrderPaid(id: string, paymentMethod: PaymentMethod, paidBy: string): Promise<void> {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ status: "completed", payment_method: paymentMethod, paid_at: new Date().toISOString(), paid_by: paidBy })
+    .eq("id", id)
+    .eq("status", "pending")
+    .select("id");
+  if (error) throw new Error(`Failed to mark order as paid: ${error.message}`);
+  if (!data?.length) throw new Error("This order is no longer pending — refresh the page.");
 }
 
 export async function voidOrder(id: string): Promise<void> {

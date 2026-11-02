@@ -19,14 +19,24 @@ export default async function AdminOrdersPage({
     listClients(),
   ]);
   const total = orders.filter((o) => o.status === "completed").reduce((s, o) => s + Number(o.total), 0);
+  const pending = orders.filter((o) => o.status === "pending");
+  const pendingTotal = pending.reduce((s, o) => s + Number(o.total), 0);
 
   return (
     <div className="px-5 sm:px-8 py-8 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-3">
         <h1 className="font-display text-xl tracking-wide">Orders</h1>
-        <div className="text-right">
-          <div className="text-xs text-kc-muted uppercase tracking-wide">Total</div>
-          <div className="text-kc-gold-light font-display">{formatMoney(total)}</div>
+        <div className="flex gap-6 text-right">
+          {pending.length > 0 && (
+            <div>
+              <div className="text-xs text-kc-muted uppercase tracking-wide">Pending ({pending.length})</div>
+              <div className="text-kc-orange font-display">{formatMoney(pendingTotal)}</div>
+            </div>
+          )}
+          <div>
+            <div className="text-xs text-kc-muted uppercase tracking-wide">Paid total</div>
+            <div className="text-kc-gold-light font-display">{formatMoney(total)}</div>
+          </div>
         </div>
       </div>
 

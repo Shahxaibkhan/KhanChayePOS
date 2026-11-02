@@ -4,6 +4,9 @@ import { useState } from "react";
 import type { Client, Item, OrderWithItems } from "@/lib/types";
 import { formatDateTime, formatMoney } from "@/lib/date";
 import OrderEditor from "@/components/OrderEditor";
+import PrintReceiptButtons from "@/components/PrintReceiptButtons";
+import MarkPaidButtons from "@/components/MarkPaidButtons";
+import { receiptFromOrder } from "@/lib/receipt";
 import { cancelOrderAction, editOrderAction } from "./actions";
 
 export default function OrdersClient({
@@ -19,14 +22,26 @@ export default function OrdersClient({
   const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
 
   const total = orders.filter((o) => o.status === "completed").reduce((s, o) => s + Number(o.total), 0);
+  const pending = orders.filter((o) => o.status === "pending");
+  const pendingTotal = pending.reduce((s, o) => s + Number(o.total), 0);
+  // Unpaid bills first so the cashier sees what's still with the waiters.
+  const sorted = [...pending, ...orders.filter((o) => o.status !== "pending")];
 
   return (
     <div className="flex-1 px-5 sm:px-8 py-8 max-w-3xl w-full mx-auto">
       <div className="flex items-center justify-between mb-7">
         <h1 className="font-display text-xl tracking-wide">Today&apos;s Orders</h1>
-        <div className="text-right">
-          <div className="text-xs text-kc-muted uppercase tracking-wide">Total</div>
-          <div className="text-kc-gold-light font-display">{formatMoney(total)}</div>
+        <div className="flex gap-6 text-right">
+          {pending.length > 0 && (
+            <div>
+              <div className="text-xs text-kc-muted uppercase tracking-wide">Pending ({pending.length})</div>
+              <div className="text-kc-orange font-display">{formatMoney(pendingTotal)}</div>
+            </div>
+          )}
+          <div>
+            <div className="text-xs text-kc-muted uppercase tracking-wide">Paid sales</div>
+            <div className="text-kc-gold-light font-display">{formatMoney(total)}</div>
+          </div>
         </div>
       </div>
 
@@ -34,7 +49,7 @@ export default function OrdersClient({
         <p className="text-kc-muted text-sm text-center mt-16">No orders yet today.</p>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => (
+          {sorted.map((order) => (
             <div
               key={order.id}
               className={`rounded-2xl p-5 ${
@@ -42,7 +57,9 @@ export default function OrdersClient({
                   ? "bg-kc-red/5 opacity-60"
                   : order.status === "returned"
                     ? "bg-kc-gold/5 opacity-70"
-                    : "bg-kc-charcoal-2"
+                    : order.status === "pending"
+                      ? "bg-kc-charcoal-2 ring-2 ring-kc-orange/60"
+                      : "bg-kc-charcoal-2"
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -53,6 +70,9 @@ export default function OrdersClient({
                       {order.client_name}
                     </span>
                   )}
+                  {order.status === "pending" && (
+                    <span className="ml-2 text-xs text-kc-orange uppercase font-semibold">⏳ Payment pending</span>
+                  )}
                   {order.status === "voided" && <span className="ml-2 text-xs text-kc-red uppercase">Voided</span>}
                   {order.status === "returned" && (
                     <span className="ml-2 text-xs text-kc-gold-light uppercase">Returned</span>
@@ -61,7 +81,9 @@ export default function OrdersClient({
                 <div className="text-sm text-kc-gold-light font-semibold">{formatMoney(Number(order.total))}</div>
               </div>
               <div className="text-xs text-kc-muted mb-3">
-                {formatDateTime(order.created_at)} · {order.payment_method} · {order.created_by ?? "—"}
+                {formatDateTime(order.created_at)} ·{" "}
+                {order.status === "pending" ? "unpaid" : order.payment_method} · {order.created_by ?? "—"}
+                {order.paid_at && <> · paid {formatDateTime(order.paid_at)}</>}
                 {order.edited_at && <> · edited by {order.edited_by}</>}
               </div>
               <div className="text-xs text-kc-cream/80 space-y-1">
@@ -77,8 +99,14 @@ export default function OrdersClient({
               </div>
               {order.note && <div className="text-xs text-kc-muted mt-3 italic">“{order.note}”</div>}
 
-              {order.status === "completed" && (
-                <div className="flex items-center gap-5 mt-4 pt-4">
+              {order.status === "pending" && (
+                <div className="mt-4">
+                  <MarkPaidButtons orderId={order.id} total={Number(order.total)} />
+                </div>
+              )}
+
+              {(order.status === "completed" || order.status === "pending") && (
+                <div className="flex flex-wrap items-center gap-5 mt-4 pt-4">
                   <button
                     onClick={() => setEditingOrder(order)}
                     className="text-xs text-kc-gold-light hover:underline"
@@ -97,6 +125,9 @@ export default function OrdersClient({
                   >
                     {cancellingId === order.id ? "Cancelling…" : "Cancel order"}
                   </button>
+                  <div className="ml-auto">
+                    <PrintReceiptButtons data={receiptFromOrder(order)} compact />
+                  </div>
                 </div>
               )}
             </div>
