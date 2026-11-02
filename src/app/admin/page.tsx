@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/data/dashboard";
-import { daysAgoISO, formatMoney, todayISO } from "@/lib/date";
+import { BUSINESS_DAY_START_HOUR, daysAgoISO, formatDate, formatMoney, todayISO } from "@/lib/date";
 
 const RANGES = [
   { key: "today", label: "Today" },
@@ -32,7 +32,13 @@ export default async function AdminDashboard({
   return (
     <div className="px-5 sm:px-8 py-8 max-w-5xl mx-auto">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <h1 className="font-display text-xl tracking-wide">Dashboard</h1>
+        <div>
+          <h1 className="font-display text-xl tracking-wide">Dashboard</h1>
+          <p className="text-xs text-kc-muted mt-1">
+            {range === "all" ? "All time" : from === to ? `Shift of ${formatDate(from)}` : `${formatDate(from)} – ${formatDate(to)}`}{" "}
+            · each day runs {BUSINESS_DAY_START_HOUR} AM → {BUSINESS_DAY_START_HOUR} AM, so the noon–4 AM shift counts as one day
+          </p>
+        </div>
         <div className="flex gap-1 bg-kc-charcoal-2 rounded-full p-1">
           {RANGES.map((r) => (
             <Link
@@ -63,27 +69,49 @@ export default async function AdminDashboard({
         )}
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        <StatCard label="Sales" value={formatMoney(stats.salesTotal)} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <StatCard label="Sales (paid)" value={formatMoney(stats.salesTotal)} />
         <StatCard label="Orders" value={String(stats.orderCount)} />
         <StatCard label="Expenses" value={formatMoney(stats.expenseTotal)} />
         <StatCard label="Wastage" value={formatMoney(stats.wastageTotal)} />
       </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+        <StatCard label="Chai cups" value={String(stats.chaiCups)} />
+        <StatCard label="Parcel cups" value={String(stats.parcelCups)} />
+        <StatCard label="Items sold" value={String(stats.itemsSold)} />
+        <StatCard
+          label={`Pending (${stats.pendingCount})`}
+          value={formatMoney(stats.pendingTotal)}
+          hint="Unpaid — not in sales yet"
+        />
+      </div>
 
-      <div className="rounded-3xl bg-kc-charcoal-2 px-7 py-7">
-        <h2 className="font-display text-sm tracking-wide text-kc-muted mb-5">TOP ITEMS</h2>
-        {stats.topItems.length === 0 ? (
+      <div className="rounded-3xl bg-kc-charcoal-2 px-5 sm:px-7 py-7">
+        <h2 className="font-display text-sm tracking-wide text-kc-muted mb-1">ITEMS SOLD</h2>
+        <p className="text-xs text-kc-muted mb-6">Paid orders only · 🥡 = of which parcel</p>
+        {stats.categories.length === 0 ? (
           <p className="text-kc-muted text-sm">No sales in this period yet.</p>
         ) : (
-          <div className="space-y-4">
-            {stats.topItems.map((item, i) => (
-              <div key={item.name} className="flex items-center gap-4">
-                <span className="text-kc-muted text-xs w-4">{i + 1}</span>
-                <span className="flex-1 text-sm text-kc-cream">{item.name}</span>
-                <span className="text-xs text-kc-muted">{item.quantity} sold</span>
-                <span className="text-sm text-kc-gold-light font-medium w-20 text-right">
-                  {formatMoney(item.revenue)}
-                </span>
+          <div className="space-y-7">
+            {stats.categories.map((cat) => (
+              <div key={cat.category}>
+                <div className="flex items-baseline justify-between gap-4 pb-2 mb-3 border-b border-kc-charcoal-3">
+                  <span className="text-sm font-semibold text-kc-cream">{cat.category}</span>
+                  <span className="text-xs text-kc-muted">
+                    <span className="text-kc-cream font-semibold">{cat.quantity}</span> sold ·{" "}
+                    <span className="text-kc-gold-light font-semibold">{formatMoney(cat.revenue)}</span>
+                  </span>
+                </div>
+                <div className="space-y-2.5">
+                  {cat.items.map((item) => (
+                    <div key={item.name} className="flex items-center gap-3 text-sm">
+                      <span className="flex-1 min-w-0 truncate text-kc-cream/90">{item.name}</span>
+                      {item.parcelQty > 0 && <span className="text-xs text-kc-muted">🥡 {item.parcelQty}</span>}
+                      <span className="w-12 text-right text-kc-cream font-medium">{item.quantity}</span>
+                      <span className="w-20 text-right text-kc-gold-light">{formatMoney(item.revenue)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -93,11 +121,12 @@ export default async function AdminDashboard({
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="rounded-2xl bg-kc-charcoal-2 p-5">
       <div className="text-xs text-kc-muted uppercase tracking-wide mb-2">{label}</div>
       <div className="font-display text-2xl text-kc-gold-light">{value}</div>
+      {hint && <div className="text-[11px] text-kc-muted mt-1">{hint}</div>}
     </div>
   );
 }

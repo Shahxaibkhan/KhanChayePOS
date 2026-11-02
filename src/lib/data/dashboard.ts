@@ -10,8 +10,19 @@ export type DashboardStats = {
   expenseTotal: number;
   wastageTotal: number;
   net: number;
-  topItems: { name: string; quantity: number; revenue: number }[];
+  pendingCount: number;
+  pendingTotal: number;
+  chaiCups: number; // everything sold from the Chaye category
+  parcelCups: number;
+  itemsSold: number;
+  categories: CategorySales[];
 };
+
+export type ItemSales = { name: string; quantity: number; parcelQty: number; revenue: number };
+export type CategorySales = { category: string; quantity: number; revenue: number; items: ItemSales[] };
+
+// Category whose quantity is reported as "cups of chai".
+const CHAI_CATEGORY = "Chaye";
 
 export async function getDashboardStats(from: string, to: string): Promise<DashboardStats> {
   const dayStart = karachiDayStartUTC(from);
@@ -32,7 +43,7 @@ export async function getDashboardStats(from: string, to: string): Promise<Dashb
       .lte("created_at", dayEnd),
     supabase
       .from("orders")
-      .select("status")
+      .select("status, total")
       .neq("status", "completed")
       .gte("created_at", dayStart)
       .lte("created_at", dayEnd),
@@ -48,7 +59,7 @@ export async function getDashboardStats(from: string, to: string): Promise<Dashb
       .lte("wastage_date", to),
     supabase
       .from("order_items")
-      .select("item_name, quantity, line_total, orders!inner(status, created_at)")
+      .select("item_name, quantity, parcel_qty, line_total, items(category, sort_order), orders!inner(status, created_at)")
       .eq("orders.status", "completed")
       .gte("orders.created_at", dayStart)
       .lte("orders.created_at", dayEnd),
@@ -66,17 +77,37 @@ export async function getDashboardStats(from: string, to: string): Promise<Dashb
   const voidedCount = (statusRows ?? []).filter((o) => o.status === "voided").length;
   const returnedCount = (statusRows ?? []).filter((o) => o.status === "returned").length;
 
-  const byItem = new Map<string, { quantity: number; revenue: number }>();
-  for (const line of lines ?? []) {
-    const entry = byItem.get(line.item_name) ?? { quantity: 0, revenue: 0 };
+  const pending = (statusRows ?? []).filter((o) => o.status === "pending");
+
+  // Group every sold line by category, then by item. Lines whose menu item
+  // has since been deleted fall under "Other".
+  type Row = { item_name: string; quantity: number; parcel_qty: number; line_total: number; items: unknown };
+  const byCategory = new Map<string, { order: number; items: Map<string, ItemSales> }>();
+  for (const line of (lines ?? []) as Row[]) {
+    const item = (Array.isArray(line.items) ? line.items[0] : line.items) as
+      | { category: string; sort_order: number }
+      | null;
+    const category = item?.category ?? "Other";
+    const cat = byCategory.get(category) ?? { order: item?.sort_order ?? 9999, items: new Map() };
+    cat.order = Math.min(cat.order, item?.sort_order ?? 9999);
+    const entry = cat.items.get(line.item_name) ?? { name: line.item_name, quantity: 0, parcelQty: 0, revenue: 0 };
     entry.quantity += line.quantity;
+    entry.parcelQty += line.parcel_qty ?? 0;
     entry.revenue += Number(line.line_total);
-    byItem.set(line.item_name, entry);
+    cat.items.set(line.item_name, entry);
+    byCategory.set(category, cat);
   }
-  const topItems = [...byItem.entries()]
-    .map(([name, v]) => ({ name, ...v }))
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 6);
+  const categories: CategorySales[] = [...byCategory.entries()]
+    .sort((a, b) => a[1].order - b[1].order)
+    .map(([category, { items }]) => {
+      const list = [...items.values()].sort((a, b) => b.quantity - a.quantity);
+      return {
+        category,
+        quantity: list.reduce((s, i) => s + i.quantity, 0),
+        revenue: list.reduce((s, i) => s + i.revenue, 0),
+        items: list,
+      };
+    });
 
   return {
     salesTotal,
@@ -86,6 +117,11 @@ export async function getDashboardStats(from: string, to: string): Promise<Dashb
     expenseTotal,
     wastageTotal,
     net: salesTotal - expenseTotal - wastageTotal,
-    topItems,
+    pendingCount: pending.length,
+    pendingTotal: pending.reduce((sum, o) => sum + Number(o.total), 0),
+    chaiCups: categories.find((c) => c.category === CHAI_CATEGORY)?.quantity ?? 0,
+    parcelCups: categories.reduce((s, c) => s + c.items.reduce((t, i) => t + i.parcelQty, 0), 0),
+    itemsSold: categories.reduce((s, c) => s + c.quantity, 0),
+    categories,
   };
 }
