@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { PARCEL_FEE_PER_CUP } from "@/lib/constants";
 import { karachiDayEndUTC, karachiDayStartUTC } from "@/lib/date";
 import { findOrCreateClient } from "@/lib/data/clients";
-import type { CartLine, Order, OrderWithItems, PaymentMethod } from "@/lib/types";
+import type { CartLine, Order, OrderStatus, OrderWithItems, PaymentMethod } from "@/lib/types";
 
 function lineTotal(line: CartLine): number {
   return line.unitPrice * line.quantity + line.parcelQty * PARCEL_FEE_PER_CUP;
@@ -175,6 +175,7 @@ export async function listOrdersWithItems(opts: {
   from?: string;
   to?: string;
   clientId?: string;
+  status?: OrderStatus;
 } = {}): Promise<OrderWithItems[]> {
   let query = supabase
     .from("orders")
@@ -184,8 +185,16 @@ export async function listOrdersWithItems(opts: {
   if (opts.from) query = query.gte("created_at", karachiDayStartUTC(opts.from));
   if (opts.to) query = query.lte("created_at", karachiDayEndUTC(opts.to));
   if (opts.clientId) query = query.eq("client_id", opts.clientId);
+  if (opts.status) query = query.eq("status", opts.status);
 
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load orders: ${error.message}`);
   return (data as OrderWithItems[]) ?? [];
+}
+
+/** Every unpaid order, any date: count + amount for the nav badge. Never throws. */
+export async function pendingSummary(): Promise<{ count: number; total: number }> {
+  const { data, error } = await supabase.from("orders").select("total").eq("status", "pending");
+  if (error || !data) return { count: 0, total: 0 };
+  return { count: data.length, total: data.reduce((s, o) => s + Number(o.total), 0) };
 }

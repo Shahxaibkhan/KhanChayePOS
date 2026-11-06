@@ -19,7 +19,7 @@ export async function submitOrderAction(
     const createdBy = await getStaffLabel();
     // Saved as pending; the real payment method is chosen when it's marked paid.
     const order = await createOrder({ lines, paymentMethod: "cash", note, createdBy, clientName });
-    revalidatePath("/pos/orders");
+    revalidatePath("/pos", "layout"); // pending badge lives in the POS layout
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
     revalidatePath("/admin/clients");

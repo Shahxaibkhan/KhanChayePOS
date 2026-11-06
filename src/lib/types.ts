@@ -86,3 +86,19 @@ export type Wastage = {
   created_by: string | null;
   created_at: string;
 };
+
+export type Ingredient = {
+  id: string;
+  name: string;
+  unit: string;
+  stock: number;
+  low_threshold: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RecipeRow = {
+  item_id: string;
+  ingredient_id: string;
+  qty_per_unit: number;
+};

@@ -8,7 +8,7 @@ import type { EditResult } from "@/components/OrderEditor";
 
 export async function cancelOrderAction(id: string) {
   await voidOrder(id);
-  revalidatePath("/pos/orders");
+  revalidatePath("/pos", "layout"); // pending badge lives in the POS layout
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
 }
@@ -19,7 +19,7 @@ export async function markPaidAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     await markOrderPaid(id, paymentMethod, await getStaffLabel());
-    revalidatePath("/pos/orders");
+    revalidatePath("/pos", "layout"); // pending badge lives in the POS layout
     revalidatePath("/admin/orders");
     revalidatePath("/admin");
     revalidatePath("/admin/clients");
@@ -39,7 +39,7 @@ export async function editOrderAction(
   try {
     const editedBy = await getStaffLabel();
     await editOrder({ orderId, lines, paymentMethod, note, editedBy, clientName });
-    revalidatePath("/pos/orders");
+    revalidatePath("/pos", "layout"); // pending badge lives in the POS layout
     revalidatePath("/admin/orders");
     revalidatePath("/admin");
     revalidatePath("/admin/clients");

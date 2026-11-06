@@ -18,6 +18,7 @@ export default function OrdersClient({
   toolbar,
   emptyText = "No orders yet today.",
   linkClients = true,
+  showPaidTotal = true,
 }: {
   orders: OrderWithItems[];
   items: Item[];
@@ -26,6 +27,7 @@ export default function OrdersClient({
   toolbar?: ReactNode; // rendered under the header (e.g. filters on a client's page)
   emptyText?: string;
   linkClients?: boolean; // client tags link to that client's order history
+  showPaidTotal?: boolean;
 }) {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
@@ -47,10 +49,12 @@ export default function OrdersClient({
               <div className="text-kc-orange font-display">{formatMoney(pendingTotal)}</div>
             </div>
           )}
-          <div>
-            <div className="text-xs text-kc-muted uppercase tracking-wide">Paid sales</div>
-            <div className="text-kc-gold-light font-display">{formatMoney(total)}</div>
-          </div>
+          {showPaidTotal && (
+            <div>
+              <div className="text-xs text-kc-muted uppercase tracking-wide">Paid sales</div>
+              <div className="text-kc-gold-light font-display">{formatMoney(total)}</div>
+            </div>
+          )}
         </div>
       </div>
 
