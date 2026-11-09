@@ -122,8 +122,12 @@ export async function printReceipt(
 }
 
 /** Collective bill for a client — see buildStatement(). */
-export async function printStatement(data: StatementData, copies: ReceiptCopy[]): Promise<void> {
-  return printLines(copies.map((c) => buildStatement(data, c)));
+export async function printStatement(
+  data: StatementData,
+  copies: ReceiptCopy[],
+  opts: { reprint?: boolean } = {}
+): Promise<void> {
+  return printLines(copies.map((c) => buildStatement(data, c, opts)));
 }
 
 async function printLines(receipts: PrintLine[][]): Promise<void> {

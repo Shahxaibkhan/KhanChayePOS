@@ -75,6 +75,17 @@ export type Client = {
   updated_at: string;
 };
 
+/** A collective bill printed for a client (sql/009_client_bills.sql). */
+export type ClientBill = {
+  id: string;
+  client_id: string;
+  order_ids: string[];
+  period: string;
+  total: number;
+  printed_by: string | null;
+  created_at: string;
+};
+
 export type Wastage = {
   id: string;
   item_id: string | null;

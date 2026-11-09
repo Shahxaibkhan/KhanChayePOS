@@ -7,6 +7,7 @@ import { formatDateTime, formatMoney } from "@/lib/date";
 import OrderEditor from "@/components/OrderEditor";
 import PrintReceiptButtons from "@/components/PrintReceiptButtons";
 import MarkPaidButtons from "@/components/MarkPaidButtons";
+import CollectiveBillPanel, { type BillHistoryEntry } from "@/components/CollectiveBillPanel";
 import { receiptFromOrder } from "@/lib/receipt";
 import { cancelOrderAction, editOrderAction } from "./actions";
 
@@ -19,6 +20,7 @@ export default function OrdersClient({
   emptyText = "No orders yet today.",
   linkClients = true,
   showPaidTotal = true,
+  bill,
 }: {
   orders: OrderWithItems[];
   items: Item[];
@@ -28,7 +30,11 @@ export default function OrdersClient({
   emptyText?: string;
   linkClients?: boolean; // client tags link to that client's order history
   showPaidTotal?: boolean;
+  // On a client's page: tick orders for a collective bill, and reprint past bills.
+  bill?: { clientId: string; clientName: string; period: string; history: BillHistoryEntry[] };
 }) {
+  const billable = orders.filter((o) => o.status === "completed" || o.status === "pending");
+  const [selected, setSelected] = useState(() => new Set(billable.map((o) => o.id)));
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
 
@@ -60,6 +66,18 @@ export default function OrdersClient({
 
       {toolbar}
 
+      {bill && (
+        <CollectiveBillPanel
+          clientId={bill.clientId}
+          clientName={bill.clientName}
+          period={bill.period}
+          billable={billable}
+          selected={selected}
+          setSelected={setSelected}
+          history={bill.history}
+        />
+      )}
+
       {orders.length === 0 ? (
         <p className="text-kc-muted text-sm text-center mt-16">{emptyText}</p>
       ) : (
@@ -79,6 +97,20 @@ export default function OrdersClient({
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="text-sm font-medium">
+                  {bill && (order.status === "completed" || order.status === "pending") && (
+                    <input
+                      type="checkbox"
+                      checked={selected.has(order.id)}
+                      onChange={(e) => {
+                        const next = new Set(selected);
+                        if (e.target.checked) next.add(order.id);
+                        else next.delete(order.id);
+                        setSelected(next);
+                      }}
+                      title="Include on the collective bill"
+                      className="mr-2.5 h-4 w-4 align-[-2px] accent-kc-orange cursor-pointer"
+                    />
+                  )}
                   Order #{order.order_number}
                   {order.client_name &&
                     (linkClients && order.client_id ? (

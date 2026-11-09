@@ -23,11 +23,13 @@ export default function PrintReceiptButtons({
   statement,
   reprint = false,
   compact = false,
+  onPrinted,
 }: {
   data?: ReceiptData;
   statement?: StatementData;
   reprint?: boolean;
   compact?: boolean;
+  onPrinted?: () => void; // after a successful print
 }) {
   const [connected, setConnected] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -56,9 +58,10 @@ export default function PrintReceiptButtons({
     setBusy(label);
     setMessage(null);
     try {
-      if (statement) await printStatement(statement, copies);
+      if (statement) await printStatement(statement, copies, { reprint });
       else if (data) await printReceipt(data, copies, { reprint });
       setMessage({ ok: true, text: `Sent to printer — ${label.toLowerCase()}` });
+      onPrinted?.();
     } catch (err) {
       if (err instanceof PrinterNotConnectedError) setConnected(false);
       setMessage({

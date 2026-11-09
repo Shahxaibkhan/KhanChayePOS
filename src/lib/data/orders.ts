@@ -176,6 +176,7 @@ export async function listOrdersWithItems(opts: {
   to?: string;
   clientId?: string;
   status?: OrderStatus;
+  ids?: string[];
 } = {}): Promise<OrderWithItems[]> {
   let query = supabase
     .from("orders")
@@ -186,6 +187,7 @@ export async function listOrdersWithItems(opts: {
   if (opts.to) query = query.lte("created_at", karachiDayEndUTC(opts.to));
   if (opts.clientId) query = query.eq("client_id", opts.clientId);
   if (opts.status) query = query.eq("status", opts.status);
+  if (opts.ids) query = query.in("id", opts.ids);
 
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load orders: ${error.message}`);

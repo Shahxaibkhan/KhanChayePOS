@@ -3,9 +3,8 @@ import { notFound } from "next/navigation";
 import { getClient, listClients } from "@/lib/data/clients";
 import { listOrdersWithItems } from "@/lib/data/orders";
 import { listItems } from "@/lib/data/items";
-import { daysAgoISO, formatDate, formatMoney, todayISO } from "@/lib/date";
-import { statementFromOrders } from "@/lib/receipt";
-import PrintReceiptButtons from "@/components/PrintReceiptButtons";
+import { daysAgoISO, formatDate, todayISO } from "@/lib/date";
+import { listClientBills } from "@/lib/data/bills";
 import OrdersClient from "../../orders/OrdersClient";
 
 const RANGES = [
@@ -42,11 +41,17 @@ export default async function ClientOrdersPage({
 
   const from = range.daysBack !== null ? daysAgoISO(range.daysBack) : null;
   const to = todayISO();
-  const [orders, items, clients] = await Promise.all([
+  const [orders, items, clients, bills] = await Promise.all([
     listOrdersWithItems({ clientId: id, ...(from && { from, to }) }),
     listItems(),
     listClients(),
+    listClientBills(id),
   ]);
+
+  // Past bills are reprinted from the orders as they are now (paid / cancelled since).
+  const billOrderIds = [...new Set(bills.flatMap((b) => b.order_ids))];
+  const billOrders = billOrderIds.length ? await listOrdersWithItems({ ids: billOrderIds }) : [];
+  const history = bills.map((bill) => ({ bill, orders: billOrders.filter((o) => bill.order_ids.includes(o.id)) }));
 
   const shown =
     status.key === "paid"
@@ -55,11 +60,10 @@ export default async function ClientOrdersPage({
         ? orders.filter((o) => o.status === "pending")
         : orders;
 
-  // One bill covering every order currently shown (respects the range + paid/unpaid filters).
+  // Bill period when every order shown is ticked (respects the range + paid/unpaid filters).
   const period =
     (from === null ? "All time" : from === to ? `Today (${formatDate(to)})` : `${formatDate(from)} - ${formatDate(to)}`) +
     (status.key === "all" ? "" : ` - ${status.label.toLowerCase()} only`);
-  const statement = statementFromOrders(shown, client.name, period);
 
   const href = (r: RangeKey, s: StatusKey) => `/pos/clients/${id}?range=${r}&status=${s}`;
   const chip = (active: boolean) =>
@@ -90,24 +94,12 @@ export default async function ClientOrdersPage({
           </Link>
         ))}
       </div>
-      {statement.orders.length > 0 && (
-        <div className="rounded-2xl bg-kc-charcoal-2 px-5 py-4 space-y-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <span className="text-sm font-semibold text-kc-cream">🧾 Collective bill</span>
-            <span className="text-xs text-kc-muted">
-              {statement.orders.length} orders · {statement.lines.reduce((s, l) => s + l.quantity, 0)} items · Total{" "}
-              <span className="text-kc-gold-light">{formatMoney(statement.total)}</span> · Due{" "}
-              <span className="text-kc-orange font-semibold">{formatMoney(statement.total - statement.paidTotal)}</span>
-            </span>
-          </div>
-          <PrintReceiptButtons statement={statement} compact />
-        </div>
-      )}
     </div>
   );
 
   return (
     <OrdersClient
+      key={`${range.key}-${status.key}`} // fresh ticks when the filter changes
       orders={shown}
       items={items}
       clients={clients}
@@ -115,6 +107,7 @@ export default async function ClientOrdersPage({
       toolbar={toolbar}
       emptyText={`No ${status.key === "all" ? "" : status.label.toLowerCase() + " "}orders for ${client.name} (${range.label.toLowerCase()}).`}
       linkClients={false}
+      bill={{ clientId: id, clientName: client.name, period, history }}
     />
   );
 }

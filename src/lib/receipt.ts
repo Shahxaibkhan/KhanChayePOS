@@ -216,7 +216,7 @@ const shortStamp = (iso: string) =>
     (m) => m.toUpperCase()
   );
 
-export function buildStatement(data: StatementData, copy: ReceiptCopy): PrintLine[] {
+export function buildStatement(data: StatementData, copy: ReceiptCopy, opts: { reprint?: boolean } = {}): PrintLine[] {
   const L: PrintLine[] = [];
   const text = (t: string, o: Omit<Extract<PrintLine, { kind: "text" }>, "kind" | "text"> = {}) =>
     L.push({ kind: "text", text: t, ...o });
@@ -229,6 +229,7 @@ export function buildStatement(data: StatementData, copy: ReceiptCopy): PrintLin
   if (copy === "customer") L.push({ kind: "logo" });
   text(SHOP_NAME, { align: "center", bold: true, size: "double" });
   text(` CLIENT BILL - ${copy === "customer" ? "CUSTOMER" : "SHOP"} COPY `, { align: "center", bold: true, invert: true });
+  if (opts.reprint) text("** REPRINT **", { align: "center", bold: true });
   wrap(`Client: ${data.clientName}`).forEach((t) => text(t, { bold: true }));
   wrap(`Period: ${data.period}`).forEach((t) => text(t));
   text(`Orders: ${data.orders.length}`);
